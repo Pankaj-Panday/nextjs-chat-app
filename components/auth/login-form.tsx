@@ -12,9 +12,15 @@ import { useFormStatus } from "react-dom";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { loginFields } from "@/lib/constants/auth-form";
+import { GoogleLoginBtn } from "./google-login-btn";
+import { FormErrorMsg } from "./form-error";
+import { FormSuccessMsg } from "./form-success";
+import { login } from "@/actions/auth-actions";
 
 export const LoginForm = () => {
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
   const { pending } = useFormStatus();
 
   const form = useForm<z.infer<typeof LoginSchema>>({
@@ -25,10 +31,21 @@ export const LoginForm = () => {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof LoginSchema>) => {
+  const onSubmit = async (data: z.infer<typeof LoginSchema>) => {
     setLoading(true);
-    console.log("data", data);
-    // Send data to backend
+    setError("");
+    setSuccess("");
+
+    const res = await login(data);
+    if (res.error) {
+      setError(res.error);
+      setLoading(false);
+    }
+    if (res.success) {
+      setSuccess(res.success);
+      setLoading(false);
+      form.reset();
+    }
   };
 
   return (
@@ -58,6 +75,8 @@ export const LoginForm = () => {
               />
             ))}
           </div>
+          <FormErrorMsg message={error} />
+          <FormSuccessMsg message={success} />
 
           <Button type="submit" className="w-full cursor-pointer disabled:opacity-60" disabled={pending || loading}>
             <span className="flex items-center justify-center gap-2">
@@ -67,6 +86,7 @@ export const LoginForm = () => {
           </Button>
         </form>
       </Form>
+      <GoogleLoginBtn disabled={loading || pending} />
     </CardWrapper>
   );
 };

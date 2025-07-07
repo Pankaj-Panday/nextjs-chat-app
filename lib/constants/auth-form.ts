@@ -1,4 +1,4 @@
-import { RegisterFieldConfig, LoginFieldConfig } from "@/types/auth-form-types";
+import { RegisterFieldConfig, LoginFieldConfig } from "@/types/auth-types";
 
 export const registerFields: RegisterFieldConfig[] = [
   { name: "username", label: "Name", type: "text", placeholder: "John Doe", },
@@ -9,5 +9,5 @@ export const registerFields: RegisterFieldConfig[] = [
 
 export const loginFields: LoginFieldConfig[] = [
   { name: "email", label: "Email", type: "text", placeholder: "johndoe@gmail.com" },
-  { name: "password", label: "Password", type: "text", placeholder: "******" },
+  { name: "password", label: "Password", type: "password", placeholder: "******" },
 ];

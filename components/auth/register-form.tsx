@@ -12,9 +12,15 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { registerFields } from "@/lib/constants/auth-form";
+import { GoogleLoginBtn } from "./google-login-btn";
+import { register } from "@/actions/auth-actions";
+import { FormErrorMsg } from "./form-error";
+import { FormSuccessMsg } from "./form-success";
 
 export const RegisterForm = () => {
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
   const { pending } = useFormStatus();
 
   const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -27,10 +33,21 @@ export const RegisterForm = () => {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof RegisterSchema>) => {
+  const onSubmit = async (data: z.infer<typeof RegisterSchema>) => {
     setLoading(true);
-    console.log("data", data);
-    // Send data to backend
+    setSuccess("");
+    setError("");
+    
+    const res = await register(data);
+    if (res.error) {
+      setError(res.error);
+      setLoading(false);
+    }
+    if (res.success) {
+      setSuccess(res.success);
+      setLoading(false);
+      form.reset();
+    }
   };
 
   return (
@@ -60,6 +77,8 @@ export const RegisterForm = () => {
               />
             ))}
           </div>
+          <FormErrorMsg message={error} />
+          <FormSuccessMsg message={success} />
 
           <Button type="submit" className="w-full cursor-pointer disabled:opacity-60" disabled={pending || loading}>
             <span className="flex items-center justify-center gap-2">
@@ -69,6 +88,7 @@ export const RegisterForm = () => {
           </Button>
         </form>
       </Form>
+      <GoogleLoginBtn disabled={loading || pending} />
     </CardWrapper>
   );
 };

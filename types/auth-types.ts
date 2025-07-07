@@ -17,3 +17,5 @@ export type RegisterFieldConfig = {
 export type LoginFieldConfig = {
   name: LoginFormFields;
 } & BaseFieldConfig;
+
+export type AuthActionResponse = { success: string; error?: never } | { error: string; success?: never };
