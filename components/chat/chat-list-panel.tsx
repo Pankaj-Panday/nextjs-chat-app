@@ -7,7 +7,8 @@ import { ChatList } from "./chat-list";
 
 export const ChatListPanel = () => {
   return (
-    <aside className="w-96 border-r pt-16 absolute left-0 top-0 bottom-0">
+    <aside className="w-96 shrink-0 border-r flex flex-col">
+
       <section className="flex gap-2 flex-col p-2">
 
         {/* Header */}
@@ -27,7 +28,7 @@ export const ChatListPanel = () => {
       </section>
 
       {/* scroll section */}
-      <div className="w-full p-2">
+      <div className="w-full p-2 flex-1 overflow-hidden">
         {/* Render chats here */}
         <ChatList />
       </div>

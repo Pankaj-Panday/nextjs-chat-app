@@ -2,12 +2,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import userImg from "@/demo-data/user.jpeg";
 import { Label } from "../ui/label";
 import { MessageStatus } from "./message-status";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const ChatCard = ({ chat, isActive, onClick }) => {
-  console.log(`Chat id: ${chat.id}, isActive=${isActive}`);
-
   const handleClick = () => {
     onClick(chat.id);
   };
