@@ -55,8 +55,8 @@ model Chat {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  lastMessageId String  @unique
-  lastMessage   Message @relation(fields: [lastMessageId], references: [id])
+  lastMessageId String?  @unique
+  lastMessage   Message? @relation(fields: [lastMessageId], references: [id])
 
   userChats UserChat[]
   messages  Message[]  @relation("belongsTo")

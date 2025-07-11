@@ -1,10 +1,14 @@
 "use client";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { chats } from "@/demo-data/chat-list-data";
 import { ChatCard } from "./chat-card";
 import { useState } from "react";
+import { ChatListItem } from "@/types/chat-types";
 
-export const ChatList = () => {
+interface ChatListProps {
+  chats: ChatListItem[];
+}
+
+export const ChatList = ({ chats }: ChatListProps) => {
   const [activeChat, setActiveChat] = useState("");
 
   return (

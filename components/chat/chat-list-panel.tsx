@@ -6,8 +6,13 @@ import { Input } from "../ui/input";
 import { ChatList } from "./chat-list";
 import { useState } from "react";
 import { AddFriendPanel } from "./add-friend-panel";
+import { ChatListItem } from "@/types/chat-types";
 
-export const ChatListPanel = () => {
+interface ChatListPanelProps {
+  chats: ChatListItem[];
+}
+
+export const ChatListPanel = ({ chats }: ChatListPanelProps) => {
   const [showAddFriendPanel, setShowAddFriendPanel] = useState(false);
 
   return (
@@ -38,7 +43,7 @@ export const ChatListPanel = () => {
         {/* scroll section */}
         <div className="w-full p-2 flex-1 overflow-hidden">
           {/* Render chats here */}
-          <ChatList />
+          <ChatList chats={chats} />
         </div>
         {/* Add Friend Panel */}
         <AddFriendPanel isOpen={showAddFriendPanel} onClose={() => setShowAddFriendPanel(false)} />

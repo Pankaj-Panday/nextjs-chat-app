@@ -3,8 +3,15 @@ import userImg from "@/demo-data/user.jpeg";
 import { Label } from "../ui/label";
 import { MessageStatus } from "./message-status";
 import { cn } from "@/lib/utils";
+import { ChatListItem } from "@/types/chat-types";
 
-export const ChatCard = ({ chat, isActive, onClick }) => {
+interface ChatCardProps {
+  chat: ChatListItem;
+  isActive: boolean;
+  onClick: (id: string) => void;
+}
+
+export const ChatCard = ({ chat, isActive, onClick }: ChatCardProps) => {
   const handleClick = () => {
     onClick(chat.id);
   };
@@ -24,9 +31,9 @@ export const ChatCard = ({ chat, isActive, onClick }) => {
         </div>
 
         <div className="flex flex-col gap-1 flex-1">
-          <Label>User</Label>
+          <Label>{chat.Chat.name}</Label>
           <div className="flex items-center justify-between">
-            <p className="text-sm">Hello, how are you ?</p>
+            <p className="text-xs text-gray-600">{chat.Chat.lastMessage?.content}</p>
             <MessageStatus />
           </div>
         </div>
