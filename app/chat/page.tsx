@@ -26,7 +26,7 @@ export default async function ChatPage() {
       <div className="flex-1 flex flex-row items-stretch overflow-hidden">
         <ChatListPanel />
         {/* show this window when there is any active chat */}
-        <section className="flex-1 flex flex-col">{false ? <ChatWindow /> : <EmptyChatWindow />}</section>
+        <section className="flex-1 flex flex-col">{true ? <ChatWindow /> : <EmptyChatWindow />}</section>
       </div>
     </div>
   );
