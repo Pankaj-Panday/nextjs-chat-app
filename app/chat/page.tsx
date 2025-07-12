@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import { ChatListPanel } from "@/components/chat/chat-list-panel";
 import { ChatWindow } from "@/components/chat/chat-window";
-import { EmptyChatWindow } from "@/components/chat/empty-chat-window";
 import { NavBar } from "@/components/chat/navbar";
+import { ChatProvider } from "@/context/chat-context";
 import { prisma } from "@/lib/prisma";
 import { AppUser } from "@/types/user";
 
@@ -46,12 +46,20 @@ export default async function ChatPage() {
     },
   });
 
-  const formattedChats = userChats.map((chat) => {
+  const formattedChats = userChats.map((userChat) => {
+    const participants = userChat.Chat?.userChats.map(({ user }) => {
+      return user;
+    });
+
     return {
-      id: chat.id,
-      lastRead: chat.lastRead,
-      muted: chat.muted,
-      content: {},
+      id: userChat.id,
+      chatId: userChat.Chat?.id || "",
+      isGroup: userChat.Chat?.isGroup,
+      name: userChat.Chat?.name,
+      lastMessage: userChat.Chat?.lastMessage?.content,
+      participants: participants,
+      lastRead: userChat.lastRead,
+      muted: userChat.muted,
     };
   });
 
@@ -61,9 +69,13 @@ export default async function ChatPage() {
         <NavBar user={user} />
       </div>
       <div className="flex-1 flex flex-row items-stretch overflow-hidden">
-        <ChatListPanel chats={userChats} />
-        {/* show this window when there is any active chat */}
-        <section className="flex-1 flex flex-col">{false ? <ChatWindow /> : <EmptyChatWindow />}</section>
+        <ChatProvider>
+          <ChatListPanel chats={formattedChats} currentUser={user} />
+          {/* show this window when there is any active chat */}
+          <section className="flex-1 flex flex-col">
+            <ChatWindow currentUser={user} />
+          </section>
+        </ChatProvider>
       </div>
     </div>
   );

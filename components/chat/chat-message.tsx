@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
+import { Message } from "@/types/chat-types";
 
 interface ChatMessageProps {
-  message: any;
+  message: Message;
   isOwn: boolean;
 }
 
