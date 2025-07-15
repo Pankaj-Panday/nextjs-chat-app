@@ -9,8 +9,8 @@ import { ChatMessage } from "./chat-message";
 import { AppUser } from "@/types/user";
 import { useChat } from "@/context/chat-context";
 import { EmptyChatWindow } from "./empty-chat-window";
-import { useEffect, useState } from "react";
-import { getChatDataById } from "@/actions/chat-actions";
+import { FormEvent, useEffect, useState } from "react";
+import { getChatDataById, sendMessage } from "@/actions/chat-actions";
 import { Message, Participant } from "@/types/chat-types";
 import { getChatReceiver } from "@/lib/utils";
 
@@ -20,6 +20,8 @@ interface ChatWindowProps {
 
 export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
   const { activeChatId } = useChat();
+  const [message, setMessage] = useState("");
+
   const [chatData, setChatData] = useState<{
     messages: Message[];
     participants: Participant[];
@@ -40,6 +42,25 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
 
   const { messages, participants } = chatData;
   const receiver = getChatReceiver(participants, currentUser) as Participant;
+
+  const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // call server action here
+    const newMsg = await sendMessage(message, { senderId: currentUser.id, chatId: activeChatId });
+    if (!newMsg) return;
+
+    // update UI
+    setChatData((prev) =>
+      prev
+        ? {
+            ...prev,
+            messages: [...prev.messages, newMsg],
+          }
+        : null
+    );
+
+    setMessage("");
+  };
 
   return (
     <>
@@ -65,8 +86,11 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
           </div>
         </ScrollArea>
 
-        <form className="flex items-center gap-2 border rounded-full px-3 py-2 mt-2">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2 border rounded-full px-3 py-2 mt-2">
           <Input
+            name="message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             type="text"
             placeholder="Type a message"
             className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"

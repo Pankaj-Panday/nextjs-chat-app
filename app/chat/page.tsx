@@ -3,6 +3,7 @@ import { ChatListPanel } from "@/components/chat/chat-list-panel";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { NavBar } from "@/components/chat/navbar";
 import { ChatProvider } from "@/context/chat-context";
+import { SocketProvider } from "@/context/socket-context";
 import { prisma } from "@/lib/prisma";
 import { AppUser } from "@/types/user";
 
@@ -64,19 +65,21 @@ export default async function ChatPage() {
   });
 
   return (
-    <div className="h-screen w-full flex flex-col">
-      <div>
-        <NavBar user={user} />
+    <SocketProvider>
+      <div className="h-screen w-full flex flex-col">
+        <div>
+          <NavBar user={user} />
+        </div>
+        <div className="flex-1 flex flex-row items-stretch overflow-hidden">
+          <ChatProvider>
+            <ChatListPanel chats={formattedChats} currentUser={user} />
+            {/* show this window when there is any active chat */}
+            <section className="flex-1 flex flex-col">
+              <ChatWindow currentUser={user} />
+            </section>
+          </ChatProvider>
+        </div>
       </div>
-      <div className="flex-1 flex flex-row items-stretch overflow-hidden">
-        <ChatProvider>
-          <ChatListPanel chats={formattedChats} currentUser={user} />
-          {/* show this window when there is any active chat */}
-          <section className="flex-1 flex flex-col">
-            <ChatWindow currentUser={user} />
-          </section>
-        </ChatProvider>
-      </div>
-    </div>
+    </SocketProvider>
   );
 }
