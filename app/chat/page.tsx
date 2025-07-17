@@ -65,14 +65,14 @@ export default async function ChatPage() {
   });
 
   return (
-    <SocketProvider>
+    <SocketProvider userId={user.id}>
       <div className="h-screen w-full flex flex-col">
         <div>
           <NavBar user={user} />
         </div>
         <div className="flex-1 flex flex-row items-stretch overflow-hidden">
-          <ChatProvider>
-            <ChatListPanel chats={formattedChats} currentUser={user} />
+          <ChatProvider initialChats={formattedChats}>
+            <ChatListPanel currentUser={user} />
             {/* show this window when there is any active chat */}
             <section className="flex-1 flex flex-col">
               <ChatWindow currentUser={user} />

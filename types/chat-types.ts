@@ -17,6 +17,7 @@ export type ChatItem = {
 
 export type Message = {
   id: string;
+  chatId: string;
   sender: string;
   content: string;
   sentAt: Date;

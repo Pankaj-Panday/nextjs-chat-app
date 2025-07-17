@@ -37,6 +37,7 @@ export async function getChatDataById(chatId: string) {
     const messages = chatMessages.map((msg) => {
       return {
         id: msg.id,
+        chatId: msg.chatId,
         sender: msg.senderId,
         content: msg.content,
         sentAt: msg.createdAt,
@@ -79,6 +80,7 @@ export async function sendMessage(
 
     return {
       id: newMessage.id,
+      chatId: newMessage.chatId,
       sender: newMessage.senderId,
       sentAt: newMessage.createdAt,
       content: newMessage.content,

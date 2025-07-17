@@ -19,13 +19,35 @@ app.prepare().then(() => {
   const httpServer = createServer(handler);
 
   // attach socket.io to that server
-  const io = new Server(httpServer);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: process.env.NEXT_PUBLIC_APP_URL,
+      credentials: true, // 👈 This is important if you're passing cookies or auth
+    },
+  });
 
   io.on("connection", (socket) => {
-    console.log("🟢 Client connected:", socket.id);
+    const userId = socket.handshake.auth.userId;
+    console.log("🟢 Client connected:", userId);
+
+    socket.on("join-room", (chatId) => {
+      socket.join(chatId);
+      console.log(`${userId} joined chat room: ${chatId}`);
+    });
+
+    socket.on("leave-room", (chatId) => {
+      socket.leave(chatId);
+      console.log(`${userId} left the room: ${chatId}`);
+    });
+
+    socket.on("new-message", (message) => {
+      console.log("📨 New message from", userId, "in chat", message.chatId);
+      // broadcast to the room
+      socket.to(message.chatId).emit("receive-message", message);
+    });
 
     socket.on("disconnect", () => {
-      console.log("🔴 Client disconnected:", socket.id);
+      console.log("🔴 Client disconnected:", userId);
     });
   });
 
