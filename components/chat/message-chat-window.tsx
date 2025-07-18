@@ -6,13 +6,14 @@ import { Button } from "../ui/button";
 import { SendHorizonal } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { ChatMessage } from "./chat-message";
-import { FormEvent, useEffect, useState } from "react";
-import { ChatItem, Message, Participant } from "@/types/chat-types";
+import { FormEvent, useState } from "react";
+import { Participant } from "@/types/chat-types";
 import { AppUser } from "@/types/user";
 import { useChat } from "@/context/chat-context";
-import { getChatDataById, sendMessage } from "@/actions/chat-actions";
+import { sendMessage } from "@/actions/chat-actions";
 import { getChatReceiver } from "@/lib/utils";
 import { useSocket } from "@/context/socket-context";
+import { useCurrentChatData } from "@/hooks/useCurrentChatData";
 
 interface MessageChatWindowProps {
   currentUser: AppUser;
@@ -22,49 +23,9 @@ export const MessageChatWindow = ({ currentUser }: MessageChatWindowProps) => {
   const [message, setMessage] = useState("");
   const { activeChatId, setChats } = useChat();
   const { socket } = useSocket();
+  const { currentChatData, setCurrentChatData } = useCurrentChatData(activeChatId);
 
-  const [chatData, setChatData] = useState<{
-    messages: Message[];
-    participants: Participant[];
-  } | null>(null);
-
-  useEffect(() => {
-    if (!activeChatId || !socket) return;
-
-    socket.emit("join-room", activeChatId);
-
-    const handleIncomingMessage = (newMsg: Message) => {
-      if (newMsg.chatId === activeChatId) {
-        setChatData((prev) => (prev ? { ...prev, messages: [...prev.messages, newMsg] } : null));
-      }
-      setChats((prevChats) => {
-        const chatExists = prevChats.find((c: ChatItem) => c.chatId === newMsg.chatId);
-        if (!chatExists) return prevChats;
-
-        const updatedChats = prevChats.map((chat: ChatItem) => {
-          if (chat.chatId === newMsg.chatId) return { ...chat, lastMessage: newMsg.content };
-          return chat;
-        });
-        console.log(updatedChats);
-        return updatedChats;
-      });
-    };
-
-    socket.on("receive-message", handleIncomingMessage);
-
-    const fetchChatData = async () => {
-      const data = await getChatDataById(activeChatId);
-      if (data) setChatData(data);
-    };
-
-    fetchChatData();
-
-    return () => {
-      socket.emit("leave-room", activeChatId); // leave room when component unmounts
-    };
-  }, [activeChatId, socket, setChats]);
-
-  if (!chatData) return null;
+  if (!currentChatData) return null;
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,9 +37,9 @@ export const MessageChatWindow = ({ currentUser }: MessageChatWindowProps) => {
     socket?.emit("new-message", newMsg);
 
     // update UI
-    setChatData((prev) => (prev ? { ...prev, messages: [...prev.messages, newMsg] } : null));
+    setCurrentChatData((prev) => (prev ? { ...prev, messages: [...prev.messages, newMsg] } : null));
     setChats((prevChats) => {
-      const updatedChats = prevChats.map((chat: ChatItem) => {
+      const updatedChats = prevChats.map((chat) => {
         if (chat.chatId === newMsg.chatId) return { ...chat, lastMessage: newMsg.content };
         return chat;
       });
@@ -88,7 +49,7 @@ export const MessageChatWindow = ({ currentUser }: MessageChatWindowProps) => {
     setMessage("");
   };
 
-  const { messages, participants } = chatData;
+  const { messages, participants } = currentChatData;
   const receiver = getChatReceiver(participants, currentUser) as Participant;
 
   return (

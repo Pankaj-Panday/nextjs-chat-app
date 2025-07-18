@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatCard } from "./chat-card";
 import { AppUser } from "@/types/user";
 import { useChat } from "@/context/chat-context";
+import { useMessageListener } from "@/hooks/useMessageListener";
 
 interface ChatListProps {
   currentUser: AppUser;
@@ -10,8 +11,7 @@ interface ChatListProps {
 
 export const ChatList = ({ currentUser }: ChatListProps) => {
   const { activeChatId, setActiveChatId, chats } = useChat();
-
-  console.log("Chats from chat list", chats);
+  useMessageListener(activeChatId);
 
   return (
     <ScrollArea className="flex flex-1 gap-4 h-full flex-col">

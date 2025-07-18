@@ -21,7 +21,7 @@ export const ChatCard = ({ chat, isActive, onClick, currentUser }: ChatCardProps
     onClick(chat.chatId);
   };
 
-  const reciever = chat.isGroup ? {name: "Group", image: ""}: getChatReceiver(chat.participants, currentUser);
+  const reciever = chat.isGroup ? {name: chat.name, image: ""}: getChatReceiver(chat.participants, currentUser);
   return (
     <article
       className={cn("p-2 cursor-pointer hover:bg-muted/50 rounded-md", isActive && "bg-muted hover:bg-muted")}
@@ -39,7 +39,7 @@ export const ChatCard = ({ chat, isActive, onClick, currentUser }: ChatCardProps
         <div className="flex flex-col gap-1 flex-1">
           <Label>{reciever?.name}</Label>
           <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-600">{chat.lastMessage}</p>
+            <p className="text-xs text-gray-600 line-clamp-1">{chat.lastMessage}</p>
             <MessageStatus />
           </div>
         </div>
