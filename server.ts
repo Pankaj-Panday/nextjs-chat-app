@@ -43,7 +43,6 @@ app.prepare().then(() => {
     socket.on("new-message", (message) => {
       console.log("📨 New message from", userId, "in chat", message.chatId);
       // broadcast to the room
-      console.log("Firing receive-message for", message.content)
       socket.to(message.chatId).emit("receive-message", message);
     });
 

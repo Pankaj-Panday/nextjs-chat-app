@@ -6,26 +6,22 @@ import { Message } from "@/types/chat-types";
 
 export const useMessageListener = (chatId: string | null) => {
   const { socket } = useSocket();
-  const { setChats } = useChat();
+  const { updateChats } = useChat();
   const { setCurrentChatData } = useCurrentChatData(chatId);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !chatId) return;
 
     const handleIncomingMessage = (newMsg: Message) => {
+      console.log("running receive-message logic")
       // update the current chat data
-      if (chatId && (chatId === newMsg.chatId)) {
+      if (chatId && chatId === newMsg.chatId) {
+        console.log("Setting current chat data");
         setCurrentChatData((prev) => (prev ? { ...prev, messages: [...prev.messages, newMsg] } : null));
       }
 
       // update last message of chat list
-      setChats((prev) => {
-        const updatedChats = prev.map((chat) => {
-          if (chat.chatId === newMsg.chatId) return { ...chat, lastMessage: newMsg.content };
-          return chat;
-        });
-        return updatedChats;
-      });
+      updateChats(newMsg);
     };
 
     socket.on("receive-message", handleIncomingMessage);
@@ -33,5 +29,5 @@ export const useMessageListener = (chatId: string | null) => {
     return () => {
       socket.off("receive-message", handleIncomingMessage);
     };
-  }, [chatId, socket, setChats, setCurrentChatData]);
+  }, [chatId, socket, updateChats, setCurrentChatData]);
 };

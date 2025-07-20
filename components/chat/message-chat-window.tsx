@@ -13,7 +13,6 @@ import { useChat } from "@/context/chat-context";
 import { sendMessage } from "@/actions/chat-actions";
 import { getChatReceiver } from "@/lib/utils";
 import { useSocket } from "@/context/socket-context";
-import { useCurrentChatData } from "@/hooks/useCurrentChatData";
 
 interface MessageChatWindowProps {
   currentUser: AppUser;
@@ -21,9 +20,8 @@ interface MessageChatWindowProps {
 
 export const MessageChatWindow = ({ currentUser }: MessageChatWindowProps) => {
   const [message, setMessage] = useState("");
-  const { activeChatId, setChats } = useChat();
+  const { activeChatId, updateChats, currentChatData, updateCurrentChat } = useChat();
   const { socket } = useSocket();
-  const { currentChatData, setCurrentChatData } = useCurrentChatData(activeChatId);
 
   if (!currentChatData) return null;
 
@@ -37,15 +35,8 @@ export const MessageChatWindow = ({ currentUser }: MessageChatWindowProps) => {
     socket?.emit("new-message", newMsg);
 
     // update UI
-    setCurrentChatData((prev) => (prev ? { ...prev, messages: [...prev.messages, newMsg] } : null));
-    setChats((prevChats) => {
-      const updatedChats = prevChats.map((chat) => {
-        if (chat.chatId === newMsg.chatId) return { ...chat, lastMessage: newMsg.content };
-        return chat;
-      });
-      return updatedChats;
-    });
-
+    updateCurrentChat(newMsg);
+    updateChats(newMsg);
     setMessage("");
   };
 
