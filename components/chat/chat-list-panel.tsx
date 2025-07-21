@@ -46,7 +46,7 @@ export const ChatListPanel = ({ currentUser }: ChatListPanelProps) => {
           <ChatList currentUser={currentUser} />
         </div>
         {/* Add Friend Panel */}
-        <AddFriendPanel isOpen={showAddFriendPanel} onClose={() => setShowAddFriendPanel(false)} />
+        <AddFriendPanel currentUser={currentUser} isOpen={showAddFriendPanel} onClose={() => setShowAddFriendPanel(false)} />
       </aside>
     </>
   );

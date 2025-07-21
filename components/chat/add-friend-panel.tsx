@@ -1,25 +1,40 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Input } from "../ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../ui/sheet";
-import userImg from "@/demo-data/user.jpeg";
 import { AppUser } from "@/types/user";
 import { ScrollArea } from "../ui/scroll-area";
+import { getUsersBySearchTerm } from "@/actions/search-actions";
+import { useDebounce } from "@/hooks/useDebounce";
+import { cn } from "@/lib/utils";
 
 interface AddFriendPanelProps {
   isOpen: boolean;
+  currentUser: AppUser;
   onClose: (open: boolean) => void;
 }
 
-export const AddFriendPanel = ({ isOpen, onClose }: AddFriendPanelProps) => {
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [searchResults, setSearchResults] = useState<AppUser[]>([]);
+export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelProps) => {
+  const [search, setSearch] = useState<string>("");
+  const [searchedUsers, setSearchedUsers] = useState<AppUser[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const debouncedSearch = useDebounce(search);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (debouncedSearch.trim() !== "") {
+        setIsLoading(true);
+        const users = await getUsersBySearchTerm(debouncedSearch);
+        setSearchedUsers(users);
+        setIsLoading(false);
+      } else {
+        setSearchedUsers([]);
+      }
+    };
+    fetchUsers();
+  }, [debouncedSearch]);
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -33,29 +48,44 @@ export const AddFriendPanel = ({ isOpen, onClose }: AddFriendPanelProps) => {
             type="search"
             placeholder="Search by name or email"
             className="py-6 px-4 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:opacity-70"
-            value={searchTerm}
-            onChange={handleChange}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-          {searchResults.length > 0 && (
-            <ScrollArea className="h-full mt-4 pr-3 pb-3">
-              {searchResults.map((result) => (
-                <div
-                  key={result.id}
-                  className="flex items-center gap-3 rounded-md p-3 hover:bg-muted transition cursor-pointer"
-                >
-                  <Avatar className="size-10">
-                    <AvatarImage src={userImg.src} />
-                    <AvatarFallback>P</AvatarFallback>
-                  </Avatar>
+          {isLoading ? (
+            <p className="text-muted-foreground text-sm text-center mt-4">Searching...</p>
+          ) : searchedUsers.length > 0 ? (
+            <ScrollArea className="h-full pr-3 pb-3 mt-4">
+              {searchedUsers.map((user) => {
+                const isCurrentUser = user.id === currentUser.id;
+                return (
+                  <div
+                    key={user.id}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md p-3 hover:bg-muted transition cursor-pointer",
+                      isCurrentUser
+                        ? "opacity-75 cursor-not-allowed pointer-events-none"
+                        : "hover:bg-muted cursor-pointer"
+                    )}
+                  >
+                    <Avatar className="size-10">
+                      <AvatarImage src={user.image || ""} />
+                      <AvatarFallback>{user.name?.[0] ?? "U"}</AvatarFallback>
+                    </Avatar>
 
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium text-foreground">Pankaj {result.id}</p>
-                    <p className="text-xs text-muted-foreground">pankaj@example.com</p>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {user.name}
+                        {isCurrentUser && " (You)"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </ScrollArea>
-          )}
+          ) : debouncedSearch.trim() !== "" ? (
+            <p className="text-muted-foreground text-sm text-center mt-4">No users found.</p>
+          ) : null}
         </div>
       </SheetContent>
     </Sheet>
