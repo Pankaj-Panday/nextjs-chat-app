@@ -1,8 +1,4 @@
-export type Participant = {
-  id: string;
-  name: string | null;
-  image: string | null;
-};
+import { AppUser } from "./user";
 
 export type ChatItem = {
   id: string;
@@ -10,7 +6,7 @@ export type ChatItem = {
   isGroup?: boolean | null;
   name?: string | null;
   lastMessage?: string | null;
-  participants: Participant[] | undefined;
+  participants?: AppUser[];
   lastRead: Date | null;
   muted: boolean;
 };

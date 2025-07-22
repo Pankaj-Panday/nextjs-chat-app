@@ -9,11 +9,12 @@ import { ScrollArea } from "../ui/scroll-area";
 import { getUsersBySearchTerm } from "@/actions/search-actions";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
+import { useChat } from "@/context/chat-context";
 
 interface AddFriendPanelProps {
   isOpen: boolean;
   currentUser: AppUser;
-  onClose: (open: boolean) => void;
+  onClose: () => void;
 }
 
 export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelProps) => {
@@ -21,6 +22,24 @@ export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelP
   const [searchedUsers, setSearchedUsers] = useState<AppUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const debouncedSearch = useDebounce(search);
+  const { setActiveChatUser, setActiveChatId, chats } = useChat();
+
+  const handleClick = (user: AppUser) => {
+    // if user clicked on himself do nothing
+    if(user.id === currentUser.id) return;
+
+    // find if some chat already exist between selected user
+    const existingChat = chats.find(chat => {
+      return !chat.isGroup && chat.participants?.some(p => p.id === user.id);
+    })
+
+    if(existingChat) setActiveChatId(existingChat.chatId);
+    else setActiveChatId(null);
+    setActiveChatUser(user);
+    setSearch("");
+    // close the sheet
+    onClose();
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -66,6 +85,7 @@ export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelP
                         ? "opacity-75 cursor-not-allowed pointer-events-none"
                         : "hover:bg-muted cursor-pointer"
                     )}
+                    onClick={() => handleClick(user)}
                   >
                     <Avatar className="size-10">
                       <AvatarImage src={user.image || ""} />

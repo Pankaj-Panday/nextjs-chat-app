@@ -3,36 +3,18 @@
 import { prisma } from "@/lib/prisma";
 import { Message } from "@/types/chat-types";
 
-export async function getChatDataById(chatId: string) {
+export async function getChatMessagesByChatId(chatId: string) {
   try {
     if (!chatId) throw new Error("No chat id given");
 
-    const [chatMessages, chatParticipants] = await Promise.all([
-      prisma.message.findMany({
+    const chatMessages = await prisma.message.findMany({
         where: {
           chatId: chatId,
         },
         orderBy: {
           createdAt: "asc",
         },
-      }),
-      prisma.userChat.findMany({
-        where: {
-          chatId: chatId,
-        },
-        select: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-        },
-      }),
-    ]);
-
-    const participants = chatParticipants.map((participant) => participant.user);
+      });
 
     const messages = chatMessages.map((msg) => {
       return {
@@ -47,7 +29,6 @@ export async function getChatDataById(chatId: string) {
     return {
       id: chatId,
       messages,
-      participants,
     };
   } catch (error) {
     if (error instanceof Error) throw new Error("Error getting chat data: " + error.message);
@@ -56,7 +37,7 @@ export async function getChatDataById(chatId: string) {
 
 export async function sendMessage(
   content: string,
-  { senderId, chatId }: { senderId: string; chatId: string }
+  { senderId, chatId }: { senderId: string; chatId: string | null }
 ): Promise<Message | undefined> {
   try {
     if (!senderId || !chatId) throw new Error("Invalid sender or chat ID.");

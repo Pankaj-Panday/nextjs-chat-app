@@ -38,6 +38,7 @@ export default async function ChatPage() {
                   id: true,
                   name: true,
                   image: true,
+                  email: true,
                 },
               },
             },
