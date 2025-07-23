@@ -30,6 +30,7 @@ export const ChatProvider = ({ children, initialChats }: { children: React.React
   const joinedRoomsRef = useRef<Set<string>>(new Set());
 
   const updateChats = useCallback((newMsg: Message) => {
+    console.log("Updating chats with newMsg", newMsg);
     setChats((prevChats) => {
       return prevChats.map((chat) => (chat.chatId === newMsg.chatId ? { ...chat, lastMessage: newMsg.content } : chat));
     });
@@ -37,8 +38,10 @@ export const ChatProvider = ({ children, initialChats }: { children: React.React
 
   const updateCurrentChat = useCallback(
     (newMsg: Message) => {
-      if (activeChatId === newMsg.chatId) 
+      console.log("updating current chat with id", activeChatId);
+      if (activeChatId === newMsg.chatId) {
         setCurrentChatMessages((prevMsgs) => (prevMsgs ? [...prevMsgs, newMsg] : null));
+      }
     },
     [activeChatId]
   );
@@ -59,9 +62,9 @@ export const ChatProvider = ({ children, initialChats }: { children: React.React
   useEffect(() => {
     const fetchCurrentChatData = async () => {
       if (!activeChatId) {
-        setCurrentChatMessages([])
+        setCurrentChatMessages([]);
         return;
-      } 
+      }
       const data = await getChatMessagesByChatId(activeChatId);
       if (data) setCurrentChatMessages(data.messages);
     };
@@ -72,6 +75,7 @@ export const ChatProvider = ({ children, initialChats }: { children: React.React
   useEffect(() => {
     if (!socket) return;
     const handleMessage = (msg: Message) => {
+      console.log("Fired receive -message for", msg);
       updateCurrentChat(msg);
       updateChats(msg);
     };

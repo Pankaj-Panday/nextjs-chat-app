@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { findOrCreateChat } from "@/lib/utils";
 import { Message } from "@/types/chat-types";
 
 export async function getChatMessagesByChatId(chatId: string) {
@@ -8,13 +9,13 @@ export async function getChatMessagesByChatId(chatId: string) {
     if (!chatId) throw new Error("No chat id given");
 
     const chatMessages = await prisma.message.findMany({
-        where: {
-          chatId: chatId,
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      });
+      where: {
+        chatId: chatId,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
 
     const messages = chatMessages.map((msg) => {
       return {
@@ -37,26 +38,39 @@ export async function getChatMessagesByChatId(chatId: string) {
 
 export async function sendMessage(
   content: string,
-  { senderId, chatId }: { senderId: string; chatId: string | null }
+  { senderId, chatId, receiverId }: { senderId: string; chatId: string | null; receiverId?: string }
 ): Promise<Message | undefined> {
   try {
-    if (!senderId || !chatId) throw new Error("Invalid sender or chat ID.");
+    if (!senderId || (!chatId && !receiverId)) {
+      throw new Error("Invalid sender or chat ID.");
+    }
 
+    let finalChatId = chatId;
+
+    // if chatId isn't provided find or create the chat based on the senderId and receiverId
+    if (!finalChatId && receiverId) {
+      // find if chat already exist between sender and receiver
+      const chat = await findOrCreateChat(senderId, receiverId);
+      finalChatId = chat.id;
+    }
+
+    if (!finalChatId) {
+      throw new Error("Couldn't find or create chat");
+    }
+
+    // create the message record
     const newMessage = await prisma.message.create({
       data: {
         senderId,
-        chatId,
+        chatId: finalChatId,
         content,
       },
     });
 
+    // update the lastMessage of the chat
     await prisma.chat.update({
-      where: {
-        id: chatId,
-      },
-      data: {
-        lastMessageId: newMessage.id,
-      },
+      where: { id: finalChatId },
+      data: { lastMessageId: newMessage.id },
     });
 
     return {

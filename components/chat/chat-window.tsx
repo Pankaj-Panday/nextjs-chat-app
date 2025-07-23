@@ -27,7 +27,7 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // call server action here
-    const newMsg = await sendMessage(message, { senderId: currentUser.id, chatId: activeChatId });
+    const newMsg = await sendMessage(message, { senderId: currentUser.id, chatId: activeChatId, receiverId: activeChatUser?.id });
     if (!newMsg) return;
 
     // Emit socket event after DB save
@@ -42,13 +42,11 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
   return (
     <>
       {/* topbar */}
-      <div
-        className="h-16 px-3 py-2 flex items-center border-b"
-      >
+      <div className="h-16 px-3 py-2 flex items-center border-b">
         {/* user avatar */}
         <div className="flex gap-2 items-center">
           <Avatar className="size-10">
-            <AvatarImage src={activeChatUser?.image} />
+            <AvatarImage src={activeChatUser?.image ?? undefined} />
             <AvatarFallback>{activeChatUser?.name?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           <p className="font-semibold">{activeChatUser?.name}</p>

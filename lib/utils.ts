@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import bcrypt from "bcryptjs";
 import { AppUser } from "@/types/user";
+import { prisma } from "@/lib/prisma";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,3 +33,31 @@ export const getChatReceiver = (participants: AppUser[] | undefined, currentUser
   }
   return receiver;
 };
+
+export async function findOrCreateChat(senderId: string, receiverId: string) {
+  const existingChat = await prisma.chat.findFirst({
+    where: {
+      AND: [
+        { isGroup: false },
+        { userChats: { some: { userId: senderId } } },
+        { userChats: { some: { userId: receiverId } } },
+      ],
+    },
+  });
+
+  if (existingChat) return existingChat;
+
+  const newChat = await prisma.chat.create({
+    data: {
+      isGroup: false,
+      userChats: {
+        create: [
+          { user: { connect: { id: senderId } } },
+          { user: { connect: { id: receiverId } } },
+        ],
+      },
+    },
+  });
+
+  return newChat;
+}
