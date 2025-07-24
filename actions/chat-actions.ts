@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { findOrCreateChat } from "@/lib/utils";
-import { Message } from "@/types/chat-types";
+import { ChatItem, ExtendedMessage } from "@/types/chat-types";
 
 export async function getChatMessagesByChatId(chatId: string) {
   try {
@@ -39,19 +39,21 @@ export async function getChatMessagesByChatId(chatId: string) {
 export async function sendMessage(
   content: string,
   { senderId, chatId, receiverId }: { senderId: string; chatId: string | null; receiverId?: string }
-): Promise<Message | undefined> {
+) {
   try {
     if (!senderId || (!chatId && !receiverId)) {
       throw new Error("Invalid sender or chat ID.");
     }
 
     let finalChatId = chatId;
+    let isNewChat = false;
 
     // if chatId isn't provided find or create the chat based on the senderId and receiverId
     if (!finalChatId && receiverId) {
       // find if chat already exist between sender and receiver
-      const chat = await findOrCreateChat(senderId, receiverId);
+      const { chat, isNew } = await findOrCreateChat(senderId, receiverId);
       finalChatId = chat.id;
+      isNewChat = isNew;
     }
 
     if (!finalChatId) {
@@ -67,11 +69,42 @@ export async function sendMessage(
       },
     });
 
-    // update the lastMessage of the chat
-    await prisma.chat.update({
-      where: { id: finalChatId },
-      data: { lastMessageId: newMessage.id },
-    });
+    let chat, formattedChat;
+    // if its an old chat simply update last message
+    if (!isNewChat) {
+      chat = await prisma.chat.update({
+        where: { id: finalChatId },
+        data: { lastMessageId: newMessage.id },
+      });
+    } else {
+      // if its new chat, also return other fields
+      chat = await prisma.chat.update({
+        where: { id: finalChatId },
+        data: { lastMessageId: newMessage.id },
+        select: {
+          isGroup: true,
+          name: true,
+          userChats: {
+            where: {
+              userId: senderId,
+            },
+            select: {
+              id: true,
+              lastRead: true,
+              muted: true,
+            },
+          },
+        },
+      });
+
+      formattedChat = {
+        id: chat.userChats[0].id,
+        isGroup: chat.isGroup,
+        name: chat.name,
+        lastRead: chat.userChats[0].lastRead,
+        muted: chat.userChats[0].muted,
+      };
+    }
 
     return {
       id: newMessage.id,
@@ -79,6 +112,8 @@ export async function sendMessage(
       sender: newMessage.senderId,
       sentAt: newMessage.createdAt,
       content: newMessage.content,
+      isInNewChat: isNewChat,
+      chat: isNewChat ? formattedChat : null,
     };
   } catch (error) {
     if (error instanceof Error) throw new Error("Error sending message: " + error.message);

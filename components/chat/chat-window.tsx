@@ -27,15 +27,15 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // call server action here
-    const newMsg = await sendMessage(message, { senderId: currentUser.id, chatId: activeChatId, receiverId: activeChatUser?.id });
-    if (!newMsg) return;
-
+    const msg = await sendMessage(message, { senderId: currentUser.id, chatId: activeChatId, receiverId: activeChatUser?.id });
+    if (!msg) return;
+    
     // Emit socket event after DB save
-    socket?.emit("new-message", newMsg);
+    socket?.emit("new-message", msg);
 
     // update UI
-    updateCurrentChat(newMsg);
-    updateChats(newMsg);
+    updateCurrentChat(msg);
+    updateChats(msg);
     setMessage("");
   };
 

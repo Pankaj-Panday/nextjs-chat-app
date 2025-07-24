@@ -12,13 +12,12 @@ interface MessageChatWindowProps {
 export const MessageChatWindow = ({ currentUser }: MessageChatWindowProps) => {
   const { currentChatMessages } = useChat();
 
-  console.log("Current chat messages: ", currentChatMessages)
 
   return (
     <>
       {/* chat scroll area */}
       <ScrollArea className="flex-1 px-8 pb-2 min-h-2">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           {currentChatMessages?.map((msg) => (
             <ChatMessage key={msg.id} message={msg} isOwn={msg.sender === currentUser.id} />
           ))}

@@ -72,7 +72,7 @@ export default async function ChatPage() {
           <NavBar user={user} />
         </div>
         <div className="flex-1 flex flex-row items-stretch overflow-hidden">
-          <ChatProvider initialChats={formattedChats}>
+          <ChatProvider currentUser={user} initialChats={formattedChats}>
             <ChatListPanel currentUser={user} />
             {/* show this window when there is any active chat */}
             <section className="flex-1 flex flex-col">

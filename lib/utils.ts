@@ -45,19 +45,18 @@ export async function findOrCreateChat(senderId: string, receiverId: string) {
     },
   });
 
-  if (existingChat) return existingChat;
+  if (existingChat) {
+    return { chat: existingChat, isNew: false };
+  }
 
   const newChat = await prisma.chat.create({
     data: {
       isGroup: false,
       userChats: {
-        create: [
-          { user: { connect: { id: senderId } } },
-          { user: { connect: { id: receiverId } } },
-        ],
+        create: [{ user: { connect: { id: senderId } } }, { user: { connect: { id: receiverId } } }],
       },
     },
   });
 
-  return newChat;
+  return { chat: newChat, isNew: true };
 }

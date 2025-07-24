@@ -18,3 +18,5 @@ export type Message = {
   content: string;
   sentAt: Date;
 };
+
+export type ExtendedMessage = Message & { isInNewChat: boolean };
