@@ -17,7 +17,6 @@ type ChatContextType = {
   currentChatMessages: any;
   setCurrentChatMessages: any;
   updateCurrentChat: (msg: ExtendedMessage) => void;
-  fetchCurrentChatData: any;
 };
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -53,7 +52,7 @@ export const ChatProvider = ({
             lastRead: msg.chat.lastRead,
             muted: msg.chat.muted,
             name: msg.chat.name,
-            participants: !msg.chat.isGroup ? [{ ...currentUser }, { ...activeChatUser }] : undefined,
+            participants: !msg.chat.isGroup ? [{ ...currentUser }, { ...activeChatUser }] : undefined,  // need to modify this when implementing group chat
           };
           return [newChatRecord, ...prevChats];
         }
@@ -79,13 +78,10 @@ export const ChatProvider = ({
     [activeChatId]
   );
 
-  const fetchCurrentChatData = useCallback(async (chatId: string) => {
-    return await getChatMessagesByChatId(chatId);
-  }, []);
-
   // join all chat rooms for logged in user
   useEffect(() => {
     if (socket && isConnected) {
+      // chata are updated when a message is sent in new chat and hence even that room is joined by the logged in user
       chats.forEach((chat) => {
         if (!joinedRoomsRef.current.has(chat.chatId)) {
           socket.emit("join-room", chat.chatId);
@@ -95,14 +91,18 @@ export const ChatProvider = ({
     }
   }, [chats, isConnected, socket]);
 
-  // if activeChatId changes and user hasn't joined that room make them join the room - for new chats
+  // fetch current chat messages
   useEffect(() => {
-    if (!socket || !activeChatId) return;
-    if (!joinedRoomsRef.current.has(activeChatId)) {
-      socket.emit("join-room", activeChatId);
-      joinedRoomsRef.current.add(activeChatId);
-    }
-  }, [socket, activeChatId]);
+    const fetchCurrentChatData = async () => {
+      if (!activeChatId) {
+        setCurrentChatMessages([]);
+        return;
+      }
+      const data = await getChatMessagesByChatId(activeChatId);
+      if (data) setCurrentChatMessages(data.messages);
+    };
+    fetchCurrentChatData();
+  }, [activeChatId]);
 
 
   // add receive-message event listener to socket
@@ -134,7 +134,6 @@ export const ChatProvider = ({
         currentChatMessages,
         setCurrentChatMessages,
         updateCurrentChat,
-        fetchCurrentChatData,
       }}
     >
       {children}

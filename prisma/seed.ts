@@ -144,35 +144,35 @@ async function main() {
   });
 
   // 🔹 Chat 3: Group chat
-  const chat3 = await prisma.chat.create({
-    data: {
-      isGroup: true,
-      name: "College Friends",
-      userChats: {
-        create: [
-          { user: { connect: { id: user1.id } } },
-          { user: { connect: { id: user2.id } } },
-          { user: { connect: { id: user3.id } } },
-          { user: { connect: { id: user4.id } } },
-        ],
-      },
-    },
-  });
+  // const chat3 = await prisma.chat.create({
+  //   data: {
+  //     isGroup: true,
+  //     name: "College Friends",
+  //     userChats: {
+  //       create: [
+  //         { user: { connect: { id: user1.id } } },
+  //         { user: { connect: { id: user2.id } } },
+  //         { user: { connect: { id: user3.id } } },
+  //         { user: { connect: { id: user4.id } } },
+  //       ],
+  //     },
+  //   },
+  // });
 
-  const msg3_1 = await prisma.message.create({
-    data: { senderId: user4.id, chatId: chat3.id, content: "Hello group!" },
-  });
-  const msg3_2 = await prisma.message.create({
-    data: { senderId: user2.id, chatId: chat3.id, content: "What's the plan this weekend?" },
-  });
-  const msg3_3 = await prisma.message.create({
-    data: { senderId: user1.id, chatId: chat3.id, content: "Movie and dinner?" },
-  });
+  // const msg3_1 = await prisma.message.create({
+  //   data: { senderId: user4.id, chatId: chat3.id, content: "Hello group!" },
+  // });
+  // const msg3_2 = await prisma.message.create({
+  //   data: { senderId: user2.id, chatId: chat3.id, content: "What's the plan this weekend?" },
+  // });
+  // const msg3_3 = await prisma.message.create({
+  //   data: { senderId: user1.id, chatId: chat3.id, content: "Movie and dinner?" },
+  // });
 
-  await prisma.chat.update({
-    where: { id: chat3.id },
-    data: { lastMessageId: msg3_3.id },
-  });
+  // await prisma.chat.update({
+  //   where: { id: chat3.id },
+  //   data: { lastMessageId: msg3_3.id },
+  // });
 
   console.log("✅ Dummy chats + messages seeded successfully");
 }

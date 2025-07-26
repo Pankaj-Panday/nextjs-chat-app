@@ -22,7 +22,7 @@ model User {
 
   userChats   UserChat[]
   messages    Message[]
-  MessageSeen MessageSeen[]
+  messageSeen MessageSeen[]
 
   @@map("users")
 }
@@ -58,22 +58,25 @@ model Chat {
   lastMessageId String?  @unique
   lastMessage   Message? @relation(fields: [lastMessageId], references: [id])
 
-  userChats UserChat[]
   messages  Message[]  @relation("belongsTo")
+  userChats UserChat[]
 
+  @@index([createdAt, updatedAt])
   @@map("chats")
 }
 
 model UserChat {
   id       String    @id @default(cuid())
   userId   String
-  user     User      @relation(fields: [userId], references: [id])
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   chatId   String?
-  Chat     Chat?     @relation(fields: [chatId], references: [id])
+  chat     Chat?     @relation(fields: [chatId], references: [id], onDelete: Cascade)
   muted    Boolean   @default(false)
   lastRead DateTime? // last seen message time
 
   @@unique([userId, chatId])
+  @@index([userId])
+  @@index([chatId])
   @@map("user_chats")
 }
 
@@ -82,24 +85,24 @@ model Message {
   senderId      String
   sender        User          @relation(fields: [senderId], references: [id])
   chatId        String
-  chat          Chat          @relation(name: "belongsTo", fields: [chatId], references: [id])
+  chat          Chat          @relation(name: "belongsTo", fields: [chatId], references: [id], onDelete: Cascade)
   content       String        @db.VarChar(1000)
   createdAt     DateTime      @default(now())
   seenBy        MessageSeen[]
   lastMessageOf Chat?
 
+  @@index([createdAt])
   @@map("messages")
 }
 
 model MessageSeen {
   id        String   @id @default(cuid())
   messageId String
-  message   Message  @relation(fields: [messageId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   seenAt    DateTime @default(now())
 
   @@unique([userId, messageId])
-
   @@map("message_seen")
 }

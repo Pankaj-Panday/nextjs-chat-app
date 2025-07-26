@@ -21,7 +21,7 @@ export default async function ChatPage() {
       id: true,
       lastRead: true,
       muted: true,
-      Chat: {
+      chat: {
         select: {
           id: true,
           isGroup: true,
@@ -49,16 +49,16 @@ export default async function ChatPage() {
   });
 
   const formattedChats = userChats.map((userChat) => {
-    const participants = userChat.Chat?.userChats.map(({ user }) => {
+    const participants = userChat.chat?.userChats.map(({ user }) => {
       return user;
     });
 
     return {
       id: userChat.id,
-      chatId: userChat.Chat?.id || "",
-      isGroup: userChat.Chat?.isGroup,
-      name: userChat.Chat?.name,
-      lastMessage: userChat.Chat?.lastMessage?.content,
+      chatId: userChat.chat?.id || "",
+      isGroup: userChat.chat?.isGroup,
+      name: userChat.chat?.name,
+      lastMessage: userChat.chat?.lastMessage?.content,
       participants: participants,
       lastRead: userChat.lastRead,
       muted: userChat.muted,

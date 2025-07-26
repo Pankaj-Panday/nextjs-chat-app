@@ -35,20 +35,31 @@ export const getChatReceiver = (participants: AppUser[] | undefined, currentUser
 };
 
 export async function findOrCreateChat(senderId: string, receiverId: string) {
+  console.time("FindFirst");
   const existingChat = await prisma.chat.findFirst({
     where: {
-      AND: [
-        { isGroup: false },
-        { userChats: { some: { userId: senderId } } },
-        { userChats: { some: { userId: receiverId } } },
-      ],
+      isGroup: false,
+      userChats: {
+        some: {
+          userId: senderId,
+        },
+      },
+      AND: {
+        userChats: {
+          some: {
+            userId: receiverId,
+          },
+        },
+      },
     },
   });
+  console.timeEnd("FindFirst");
 
   if (existingChat) {
     return { chat: existingChat, isNew: false };
   }
 
+  console.time("create chat");
   const newChat = await prisma.chat.create({
     data: {
       isGroup: false,
@@ -57,6 +68,7 @@ export async function findOrCreateChat(senderId: string, receiverId: string) {
       },
     },
   });
+  console.timeEnd("create chat");
 
   return { chat: newChat, isNew: true };
 }

@@ -51,16 +51,19 @@ export async function sendMessage(
     // if chatId isn't provided find or create the chat based on the senderId and receiverId
     if (!finalChatId && receiverId) {
       // find if chat already exist between sender and receiver
+      console.time("findOrCreateChat");
       const { chat, isNew } = await findOrCreateChat(senderId, receiverId);
       finalChatId = chat.id;
       isNewChat = isNew;
     }
+    console.timeEnd("findOrCreateChat");
 
     if (!finalChatId) {
       throw new Error("Couldn't find or create chat");
     }
 
     // create the message record
+      console.time("message create");
     const newMessage = await prisma.message.create({
       data: {
         senderId,
@@ -68,6 +71,8 @@ export async function sendMessage(
         content,
       },
     });
+    console.timeEnd("message create");
+
 
     let chat, formattedChat;
     // if its an old chat simply update last message
@@ -78,6 +83,7 @@ export async function sendMessage(
       });
     } else {
       // if its new chat, also return other fields
+      console.time("Update + select chat");
       chat = await prisma.chat.update({
         where: { id: finalChatId },
         data: { lastMessageId: newMessage.id },
@@ -96,6 +102,8 @@ export async function sendMessage(
           },
         },
       });
+      console.timeEnd("Update + select chat");
+
 
       formattedChat = {
         id: chat.userChats[0].id,

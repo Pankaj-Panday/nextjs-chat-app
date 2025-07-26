@@ -18,7 +18,7 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
-  const { activeChatId, updateChats, updateCurrentChat, activeChatUser } = useChat();
+  const { activeChatId, setActiveChatId, updateChats, updateCurrentChat, activeChatUser } = useChat();
   const [message, setMessage] = useState("");
   const { socket } = useSocket();
 
@@ -27,11 +27,20 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // call server action here
-    const msg = await sendMessage(message, { senderId: currentUser.id, chatId: activeChatId, receiverId: activeChatUser?.id });
+    const msg = await sendMessage(message, {
+      senderId: currentUser.id,
+      chatId: activeChatId,
+      receiverId: activeChatUser?.id,
+    });
     if (!msg) return;
-    
+
     // Emit socket event after DB save
     socket?.emit("new-message", msg);
+
+    if (msg.isInNewChat) {
+      setActiveChatId(msg.chatId);
+      socket?.emit("new-chat", { roomId: msg.chatId, userId: activeChatUser ? activeChatUser.id : null });
+    }
 
     // update UI
     updateCurrentChat(msg);

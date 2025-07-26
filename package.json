@@ -11,7 +11,7 @@
     "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev --name update",
     "prisma:generate": "prisma generate",
     "seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
-    "studio": "prisma studio",
+    "studio": "dotenv -e .env.local -- prisma studio",
     "postinstall": "prisma generate"
   },
   "dependencies": {
