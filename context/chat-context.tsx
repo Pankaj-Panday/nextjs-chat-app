@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useSocket } from "./socket-context";
 import { getChatMessagesByChatId } from "@/actions/chat-actions";
 import { AppUser } from "@/types/user";
+import { createChatRecordForMsg } from "@/lib/utils";
 
 type ChatContextType = {
   activeChatId: string | null;
@@ -40,20 +41,10 @@ export const ChatProvider = ({
 
   const updateChats = useCallback(
     (msg) => {
-      console.log("Updating chats with msg", msg);
       setChats((prevChats) => {
         // if the chat is old, update it, if the chat is new, push the new record
         if (msg.isInNewChat) {
-          const newChatRecord = {
-            id: msg.chat.id,
-            chatId: msg.chatId,
-            isGroup: msg.chat.isGroup,
-            lastMessage: msg.content,
-            lastRead: msg.chat.lastRead,
-            muted: msg.chat.muted,
-            name: msg.chat.name,
-            participants: !msg.chat.isGroup ? [{ ...currentUser }, { ...activeChatUser }] : undefined,  // need to modify this when implementing group chat
-          };
+          const newChatRecord = createChatRecordForMsg(msg, currentUser, activeChatUser);
           return [newChatRecord, ...prevChats];
         }
         return prevChats.map((chat) => (chat.chatId === msg.chatId ? { ...chat, lastMessage: msg.content } : chat));
@@ -81,7 +72,7 @@ export const ChatProvider = ({
   // join all chat rooms for logged in user
   useEffect(() => {
     if (socket && isConnected) {
-      // chata are updated when a message is sent in new chat and hence even that room is joined by the logged in user
+      // chats are updated when a message is sent in new chat and hence even that room is joined by the logged in user
       chats.forEach((chat) => {
         if (!joinedRoomsRef.current.has(chat.chatId)) {
           socket.emit("join-room", chat.chatId);
@@ -104,12 +95,27 @@ export const ChatProvider = ({
     fetchCurrentChatData();
   }, [activeChatId]);
 
+  // listen for new-chat for the receiver side
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewChat = ({ roomId: chatId, chatData }: { roomId: string; chatData: any }) => {
+      // Add chatData to chats
+      setChats((prev) => [chatData, ...prev]);
+
+      // make receiver join the room for future messages
+      socket.emit("join-room", chatId);
+    };
+    socket.on("new-chat", handleNewChat);
+
+    return () => {
+      socket.off("new-chat", handleNewChat);
+    };
+  }, [socket]);
 
   // add receive-message event listener to socket
   useEffect(() => {
     if (!socket) return;
     const handleMessage = (msg: Message) => {
-      console.log("Fired receive -message for", msg);
       updateCurrentChat(msg);
       updateChats(msg);
     };

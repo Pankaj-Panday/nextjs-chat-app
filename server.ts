@@ -50,13 +50,22 @@ app.prepare().then(() => {
       console.log(`${userId} left the room: ${chatId}`);
     });
 
-    // socket.on("new-chat", ({ roomId, userId:receiverId, chatData }) => {
+    // notify receiver of the new chat
+    socket.on("new-chat", ({ roomId, userId: receiverId, chatData }) => {
+      const receiverSockets = userSocketMap.get(receiverId);
 
-    // });
+      // user is logged into atleast one device
+      if (receiverSockets && receiverSockets.size > 0) {
+        receiverSockets.forEach((socketId) => {
+          io.to(socketId).emit("new-chat", { roomId, chatData });
+        });
+      }
+    });
 
+    // Handle new message
     socket.on("new-message", (message) => {
       console.log("📨 New message from", userId, "in chat", message.chatId);
-      // broadcast to the room
+      // broadcast to the room so that both receiver and sender can have that message
       socket.to(message.chatId).emit("receive-message", message);
     });
 

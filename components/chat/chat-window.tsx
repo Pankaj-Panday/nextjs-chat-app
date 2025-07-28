@@ -12,6 +12,7 @@ import { useState } from "react";
 import { FormEvent } from "react";
 import { sendMessage } from "@/actions/chat-actions";
 import { useSocket } from "@/context/socket-context";
+import { createChatRecordForMsg } from "@/lib/utils";
 
 interface ChatWindowProps {
   currentUser: AppUser;
@@ -39,7 +40,15 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
 
     if (msg.isInNewChat) {
       setActiveChatId(msg.chatId);
-      socket?.emit("new-chat", { roomId: msg.chatId, userId: activeChatUser ? activeChatUser.id : null });
+
+      const dataForReceiver = createChatRecordForMsg(msg, currentUser, activeChatUser);
+      if(!dataForReceiver) return;
+
+      socket?.emit("new-chat", {
+        roomId: msg.chatId,
+        userId: activeChatUser ? activeChatUser.id : null,
+        chatData: dataForReceiver,
+      });
     }
 
     // update UI

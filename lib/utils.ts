@@ -35,7 +35,6 @@ export const getChatReceiver = (participants: AppUser[] | undefined, currentUser
 };
 
 export async function findOrCreateChat(senderId: string, receiverId: string) {
-  console.time("FindFirst");
   const existingChat = await prisma.chat.findFirst({
     where: {
       isGroup: false,
@@ -53,13 +52,11 @@ export async function findOrCreateChat(senderId: string, receiverId: string) {
       },
     },
   });
-  console.timeEnd("FindFirst");
 
   if (existingChat) {
     return { chat: existingChat, isNew: false };
   }
 
-  console.time("create chat");
   const newChat = await prisma.chat.create({
     data: {
       isGroup: false,
@@ -68,7 +65,33 @@ export async function findOrCreateChat(senderId: string, receiverId: string) {
       },
     },
   });
-  console.timeEnd("create chat");
 
   return { chat: newChat, isNew: true };
+}
+
+export function createChatRecordForMsg(msg: any, sender: any, receiver: any) {
+  if (!msg.chat) return;
+
+  const createParticipant = (user: any) => {
+    // this function just removes the isOauth field since its not required for msg send or receive
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+    };
+  };
+
+  return {
+    id: msg.chat.id,
+    chatId: msg.chatId,
+    isGroup: msg.chat.isGroup,
+    lastMessage: msg.content,
+    lastRead: msg.chat.lastRead,
+    muted: msg.chat.muted,
+    name: msg.chat.name,
+    participants: !msg.chat.isGroup
+      ? [{ ...createParticipant(sender) }, { ...createParticipant(receiver) }]
+      : undefined, // need to modify this when implementing group chat
+  };
 }
