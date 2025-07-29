@@ -2,18 +2,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Label } from "../ui/label";
 import { MessageStatus } from "./message-status";
 import { cn } from "@/lib/utils";
-import { ChatItem } from "@/types/chat-types";
-import { AppUser } from "@/types/user";
+import { Chat } from "@/types/chat-types";
 
 interface ChatCardProps {
-  chat: ChatItem;
+  chat: Chat;
   isActive: boolean;
   onClick: () => void;
-  receiver: AppUser;
 }
 
-export const ChatCard = ({ chat, isActive, onClick, receiver }: ChatCardProps) => {
-  if (!receiver) return null;
+export const ChatCard = ({ chat, isActive, onClick }: ChatCardProps) => {
+  if(!chat.user) return null;
 
   return (
     <article
@@ -24,13 +22,13 @@ export const ChatCard = ({ chat, isActive, onClick, receiver }: ChatCardProps) =
         {/* Avatar */}
         <div>
           <Avatar className="size-12">
-            <AvatarImage src={receiver?.image || ""} />
-            <AvatarFallback>{receiver?.name?.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={chat.user?.image ?? undefined} />
+            <AvatarFallback>{chat.user.name?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
         </div>
 
         <div className="flex flex-col gap-1 flex-1">
-          <Label>{receiver?.name}</Label>
+          <Label>{chat.user.name}</Label>
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-600 line-clamp-1">{chat.lastMessage}</p>
             <MessageStatus />

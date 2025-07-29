@@ -2,9 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { findOrCreateChat } from "@/lib/utils";
-import { ChatItem, ExtendedMessage } from "@/types/chat-types";
+import { Message, ChatMessagePayload } from "@/types/chat-types";
 
-export async function getChatMessagesByChatId(chatId: string) {
+export async function getChatMessagesByChatId(chatId: string): Promise<Message[] | undefined> {
   try {
     if (!chatId) throw new Error("No chat id given");
 
@@ -27,10 +27,7 @@ export async function getChatMessagesByChatId(chatId: string) {
       };
     });
 
-    return {
-      id: chatId,
-      messages,
-    };
+    return messages;
   } catch (error) {
     if (error instanceof Error) throw new Error("Error getting chat data: " + error.message);
   }
@@ -38,9 +35,10 @@ export async function getChatMessagesByChatId(chatId: string) {
 
 export async function sendMessage(
   content: string,
-  { senderId, chatId, receiverId }: { senderId: string; chatId: string | null; receiverId?: string }
-) {
+  { senderId, chatId, receiverId }: { senderId: string; chatId?: string; receiverId?: string }
+): Promise<ChatMessagePayload | undefined> {
   try {
+    // check if we have all required fields
     if (!senderId || (!chatId && !receiverId)) {
       throw new Error("Invalid sender or chat ID.");
     }
@@ -69,10 +67,10 @@ export async function sendMessage(
       },
     });
 
-    let chat, formattedChat;
+    let chat;
     // if its an old chat simply update last message
     if (!isNewChat) {
-      chat = await prisma.chat.update({
+      await prisma.chat.update({
         where: { id: finalChatId },
         data: { lastMessageId: newMessage.id },
       });
@@ -82,38 +80,23 @@ export async function sendMessage(
         where: { id: finalChatId },
         data: { lastMessageId: newMessage.id },
         select: {
+          id: true,
           isGroup: true,
           name: true,
-          userChats: {
-            where: {
-              userId: senderId,
-            },
-            select: {
-              id: true,
-              lastRead: true,
-              muted: true,
-            },
-          },
         },
       });
-
-      formattedChat = {
-        id: chat.userChats[0].id,
-        isGroup: chat.isGroup,
-        name: chat.name,
-        lastRead: chat.userChats[0].lastRead,
-        muted: chat.userChats[0].muted,
-      };
     }
 
     return {
-      id: newMessage.id,
-      chatId: newMessage.chatId,
-      sender: newMessage.senderId,
-      sentAt: newMessage.createdAt,
-      content: newMessage.content,
-      isInNewChat: isNewChat,
-      chat: isNewChat ? formattedChat : null,
+      message: {
+        id: newMessage.id,
+        chatId: newMessage.chatId,
+        sender: newMessage.senderId,
+        sentAt: newMessage.createdAt,
+        content: newMessage.content,
+      },
+      isNewChat: isNewChat,
+      chat: isNewChat ? chat : undefined,
     };
   } catch (error) {
     if (error instanceof Error) throw new Error("Error sending message: " + error.message);

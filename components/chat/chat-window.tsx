@@ -12,7 +12,7 @@ import { useState } from "react";
 import { FormEvent } from "react";
 import { sendMessage } from "@/actions/chat-actions";
 import { useSocket } from "@/context/socket-context";
-import { createChatRecordForMsg } from "@/lib/utils";
+import { createNewChatRecord } from "@/lib/utils";
 
 interface ChatWindowProps {
   currentUser: AppUser;
@@ -27,33 +27,35 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // call server action here
-    const msg = await sendMessage(message, {
+    if (!activeChatUser) return;
+
+    const data = await sendMessage(message, {
       senderId: currentUser.id,
-      chatId: activeChatId,
+      chatId: activeChatId ?? undefined,
       receiverId: activeChatUser?.id,
     });
-    if (!msg) return;
+    if (!data) return;
 
     // Emit socket event after DB save
-    socket?.emit("new-message", msg);
+    socket?.emit("new-message", data.message);
 
-    if (msg.isInNewChat) {
-      setActiveChatId(msg.chatId);
-
-      const dataForReceiver = createChatRecordForMsg(msg, currentUser, activeChatUser);
-      if(!dataForReceiver) return;
-
+    if (data.isNewChat && data.chat) {
+      setActiveChatId(data.chat.id); // can also use setActiveChatId(data.message.chatId);
+      const newChatRecordForReceiver = createNewChatRecord({
+        chat: data.chat,
+        message: data.message,
+        user: currentUser,
+      });
       socket?.emit("new-chat", {
-        roomId: msg.chatId,
-        userId: activeChatUser ? activeChatUser.id : null,
-        chatData: dataForReceiver,
+        roomId: data.chat.id,
+        receiverId: activeChatUser.id,
+        chatData: newChatRecordForReceiver,
       });
     }
 
     // update UI
-    updateCurrentChat(msg);
-    updateChats(msg);
+    updateCurrentChat(data.message);
+    updateChats({ ...data, user: activeChatUser });
     setMessage("");
   };
 

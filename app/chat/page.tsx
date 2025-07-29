@@ -5,65 +5,70 @@ import { NavBar } from "@/components/chat/navbar";
 import { ChatProvider } from "@/context/chat-context";
 import { SocketProvider } from "@/context/socket-context";
 import { prisma } from "@/lib/prisma";
-import { AppUser } from "@/types/user";
 
 export default async function ChatPage() {
   const session = await auth();
   if (!session) return null;
 
-  const user = session.user as AppUser;
+  const user = session.user;
 
-  const userChats = await prisma.userChat.findMany({
+  const chats = await prisma.chat.findMany({
     where: {
-      userId: user.id,
+      userChats: {
+        some: {
+          userId: user.id,
+        },
+      },
+    },
+    orderBy: {
+      updatedAt: "desc",
     },
     select: {
       id: true,
-      lastRead: true,
-      muted: true,
-      chat: {
+      name: true,
+      isGroup: true,
+      lastMessage: {
         select: {
-          id: true,
-          isGroup: true,
-          name: true,
-          lastMessage: {
+          content: true,
+        },
+      },
+      userChats: {
+        select: {
+          user: {
             select: {
-              content: true,
+              id: true,
+              name: true,
+              image: true,
+              email: true,
             },
           },
-          userChats: {
-            select: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
-                  email: true,
-                },
-              },
-            },
-          },
+          lastRead: true,
+          muted: true,
         },
       },
     },
   });
 
-  const formattedChats = userChats.map((userChat) => {
-    const participants = userChat.chat?.userChats.map(({ user }) => {
-      return user;
-    });
+  const formattedChats = chats.map((chat) => {
+    const userChat = chat.userChats.find((uc) => uc.user.id === user.id);
+    const isMuted = userChat?.muted;
+    const lastRead = userChat?.lastRead;
+
+    const otherUsers = chat.userChats.map((uc) => uc.user).filter((u) => u.id !== user.id);
 
     return {
-      id: userChat.id,
-      chatId: userChat.chat?.id || "",
-      isGroup: userChat.chat?.isGroup,
-      name: userChat.chat?.name,
-      lastMessage: userChat.chat?.lastMessage?.content,
-      participants: participants,
-      lastRead: userChat.lastRead,
-      muted: userChat.muted,
+      id: chat.id,
+      name: chat.name,
+      isGroup: chat.isGroup,
+      lastMessage: chat.lastMessage?.content,
+      lastRead,
+      muted: isMuted,
+      user: !chat.isGroup ? otherUsers[0] : null,
+      participants: chat.isGroup ? otherUsers : undefined,
     };
   });
+
+  console.log("New Formatted chats", formattedChats);
 
   return (
     <SocketProvider userId={user.id}>

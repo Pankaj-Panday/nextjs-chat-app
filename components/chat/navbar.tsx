@@ -14,8 +14,8 @@ export const NavBar = ({ user }: { user: AppUser }) => {
         <div className="flex items-end gap-2">
           {/* Logged in user - Avatar */}
           <Avatar className="size-10">
-            <AvatarImage src={user.image ?? ""} />
-            <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={user.image ?? undefined} />
+            <AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
 
           {/* Username */}

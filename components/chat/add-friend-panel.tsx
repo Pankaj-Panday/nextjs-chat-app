@@ -33,7 +33,7 @@ export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelP
       return !chat.isGroup && chat.participants?.some(p => p.id === user.id);
     })
 
-    if(existingChat) setActiveChatId(existingChat.chatId);
+    if(existingChat) setActiveChatId(existingChat.id);
     else setActiveChatId(null);
     setActiveChatUser(user);
     setSearch("");

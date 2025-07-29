@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
+import { Message } from "./types/chat-types";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -51,7 +52,8 @@ app.prepare().then(() => {
     });
 
     // notify receiver of the new chat
-    socket.on("new-chat", ({ roomId, userId: receiverId, chatData }) => {
+    socket.on("new-chat", ({ roomId, receiverId, chatData }) => {
+      if (!receiverId) return;
       const receiverSockets = userSocketMap.get(receiverId);
 
       // user is logged into atleast one device
@@ -63,8 +65,8 @@ app.prepare().then(() => {
     });
 
     // Handle new message
-    socket.on("new-message", (message) => {
-      console.log("📨 New message from", userId, "in chat", message.chatId);
+    socket.on("new-message", (message: Message) => {
+      console.log("📨 New message from", message.sender, "in chat", message.chatId);
       // broadcast to the room so that both receiver and sender can have that message
       socket.to(message.chatId).emit("receive-message", message);
     });

@@ -43,7 +43,7 @@ export const ChatListPanel = ({ currentUser }: ChatListPanelProps) => {
         {/* scroll section */}
         <div className="w-full p-2 flex-1 overflow-hidden">
           {/* Render chats here */}
-          <ChatList currentUser={currentUser} />
+          <ChatList />
         </div>
         {/* Add Friend Panel */}
         <AddFriendPanel currentUser={currentUser} isOpen={showAddFriendPanel} onClose={() => setShowAddFriendPanel(false)} />

@@ -1,69 +1,67 @@
 "use client";
 
-import { ChatItem, ExtendedMessage, Message } from "@/types/chat-types";
+import { Chat, ChatMessagePayload, Message } from "@/types/chat-types";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSocket } from "./socket-context";
 import { getChatMessagesByChatId } from "@/actions/chat-actions";
 import { AppUser } from "@/types/user";
-import { createChatRecordForMsg } from "@/lib/utils";
+import { createNewChatRecord } from "@/lib/utils";
 
 type ChatContextType = {
   activeChatId: string | null;
   setActiveChatId: React.Dispatch<React.SetStateAction<string | null>>;
-  chats: ChatItem[];
+  chats: Chat[];
   activeChatUser: AppUser | null;
   setActiveChatUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
-  setChats: React.Dispatch<React.SetStateAction<ChatItem[]>>;
-  updateChats: (msg: Message) => void;
-  currentChatMessages: any;
-  setCurrentChatMessages: any;
-  updateCurrentChat: (msg: ExtendedMessage) => void;
+  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
+  updateChats: (data: ChatMessagePayload & { user: AppUser }) => void;
+  currentChatMessages: Message[];
+  setCurrentChatMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  updateCurrentChat: (msg: Message) => void;
 };
 
 const ChatContext = createContext<ChatContextType | null>(null);
 
 export const ChatProvider = ({
-  currentUser,
+  // currentUser,
   children,
   initialChats,
 }: {
   currentUser: AppUser;
   children: React.ReactNode;
-  initialChats: ChatItem[];
+  initialChats: Chat[];
 }) => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeChatUser, setActiveChatUser] = useState<AppUser | null>(null);
 
-  const [chats, setChats] = useState(initialChats);
+  const [chats, setChats] = useState<Chat[]>(initialChats);
   const [currentChatMessages, setCurrentChatMessages] = useState<Message[]>([]);
   const { socket, isConnected } = useSocket();
   const joinedRoomsRef = useRef<Set<string>>(new Set());
 
-  const updateChats = useCallback(
-    (msg) => {
-      setChats((prevChats) => {
-        // if the chat is old, update it, if the chat is new, push the new record
-        if (msg.isInNewChat) {
-          const newChatRecord = createChatRecordForMsg(msg, currentUser, activeChatUser);
-          return [newChatRecord, ...prevChats];
-        }
-        return prevChats.map((chat) => (chat.chatId === msg.chatId ? { ...chat, lastMessage: msg.content } : chat));
-      });
-    },
-    [activeChatUser, currentUser]
-  );
+  // Updates the chat if its old chat, pushes a new chat record if its new chat
+  const updateChats = useCallback(({ message, isNewChat, chat, user }: ChatMessagePayload & { user: AppUser | null }) => {
+    setChats((prevChats) => {
+      if (!isNewChat) {
+        // update the chat
+        return prevChats.map((pc) => {
+          if (pc.id === message.chatId) {
+            return { ...pc, lastMessage: message.content }; // maybe modify lastRead as well
+          }
+          return pc;
+        });
+      }
+      // push new chat record to the chat list
+      const newChatRecord = createNewChatRecord({ message, chat, user });
+      if(!newChatRecord) return prevChats;
+      return [newChatRecord, ...prevChats];
+    });
+  }, []);
 
   const updateCurrentChat = useCallback(
-    (msg: ExtendedMessage) => {
-      if (activeChatId === msg.chatId) {
-        const newMsg: Message = {
-          chatId: msg.chatId,
-          id: msg.id,
-          content: msg.content,
-          sender: msg.sender,
-          sentAt: msg.sentAt,
-        };
-        setCurrentChatMessages((prevMsgs) => (prevMsgs ? [...prevMsgs, newMsg] : null));
+    (message: Message) => {
+      if (activeChatId === message.chatId) {
+        setCurrentChatMessages((prevMsgs) => (prevMsgs ? [...prevMsgs, message] : []));
       }
     },
     [activeChatId]
@@ -74,9 +72,9 @@ export const ChatProvider = ({
     if (socket && isConnected) {
       // chats are updated when a message is sent in new chat and hence even that room is joined by the logged in user
       chats.forEach((chat) => {
-        if (!joinedRoomsRef.current.has(chat.chatId)) {
-          socket.emit("join-room", chat.chatId);
-          joinedRoomsRef.current.add(chat.chatId);
+        if (!joinedRoomsRef.current.has(chat.id)) {
+          socket.emit("join-room", chat.id);
+          joinedRoomsRef.current.add(chat.id);
         }
       });
     }
@@ -89,8 +87,8 @@ export const ChatProvider = ({
         setCurrentChatMessages([]);
         return;
       }
-      const data = await getChatMessagesByChatId(activeChatId);
-      if (data) setCurrentChatMessages(data.messages);
+      const messages = await getChatMessagesByChatId(activeChatId);
+      if (messages) setCurrentChatMessages(messages);
     };
     fetchCurrentChatData();
   }, [activeChatId]);
@@ -98,12 +96,12 @@ export const ChatProvider = ({
   // listen for new-chat for the receiver side
   useEffect(() => {
     if (!socket) return;
-    const handleNewChat = ({ roomId: chatId, chatData }: { roomId: string; chatData: any }) => {
+    const handleNewChat = ({ roomId, chatData }: { roomId: string; chatData: Chat }) => {
       // Add chatData to chats
       setChats((prev) => [chatData, ...prev]);
 
       // make receiver join the room for future messages
-      socket.emit("join-room", chatId);
+      socket.emit("join-room", roomId);
     };
     socket.on("new-chat", handleNewChat);
 
@@ -117,7 +115,7 @@ export const ChatProvider = ({
     if (!socket) return;
     const handleMessage = (msg: Message) => {
       updateCurrentChat(msg);
-      updateChats(msg);
+      updateChats({ message: msg, isNewChat: false, chat: undefined, user: null });
     };
 
     socket.on("receive-message", handleMessage);

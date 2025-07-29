@@ -19,4 +19,26 @@ export type Message = {
   sentAt: Date;
 };
 
-export type ExtendedMessage = Message & { isInNewChat: boolean };
+export type Chat = {
+  id: string;
+  name?: string | null;
+  isGroup: boolean;
+  lastRead?: Date | null; // may have to modify this
+  muted?: boolean;
+  lastMessage?: string;
+  user: AppUser | null;
+  participants?: AppUser[];
+};
+
+export type ChatMessagePayload = {
+  message: Message;
+  isNewChat: boolean;
+  chat?: {
+    id: string;
+    isGroup: boolean;
+    name: string | null;
+  };
+};
+
+
+
