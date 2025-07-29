@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import { Input } from "../ui/input";
 import { ChatList } from "./chat-list";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { AddFriendPanel } from "./add-friend-panel";
 import { AppUser } from "@/types/user";
 
@@ -14,6 +14,11 @@ interface ChatListPanelProps {
 
 export const ChatListPanel = ({ currentUser }: ChatListPanelProps) => {
   const [showAddFriendPanel, setShowAddFriendPanel] = useState(false);
+  const [search, setSearch] = useState<string>("");
+
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
 
   return (
     <>
@@ -35,6 +40,8 @@ export const ChatListPanel = ({ currentUser }: ChatListPanelProps) => {
           {/* Search input */}
           <Input
             type="search"
+            value={search}
+            onChange={handleSearch}
             placeholder="Search chats"
             className="rounded-full px-4 py-3 text-sm placeholder:text-muted-foreground focus-visible:ring-1"
           />
@@ -43,10 +50,14 @@ export const ChatListPanel = ({ currentUser }: ChatListPanelProps) => {
         {/* scroll section */}
         <div className="w-full p-2 flex-1 overflow-hidden">
           {/* Render chats here */}
-          <ChatList />
+          <ChatList search={search} />
         </div>
         {/* Add Friend Panel */}
-        <AddFriendPanel currentUser={currentUser} isOpen={showAddFriendPanel} onClose={() => setShowAddFriendPanel(false)} />
+        <AddFriendPanel
+          currentUser={currentUser}
+          isOpen={showAddFriendPanel}
+          onClose={() => setShowAddFriendPanel(false)}
+        />
       </aside>
     </>
   );

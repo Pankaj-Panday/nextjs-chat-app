@@ -11,7 +11,7 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export async function loginWithGoogle() {
   try {
-    await signIn("google", { redirectTo: "/chat" });
+    await signIn("google", { redirectTo: "/" });
   } catch (error) {
     if (error instanceof AuthError) {
       return "Google Log in failed";
@@ -52,8 +52,17 @@ export async function register(data: z.infer<typeof RegisterSchema>): Promise<Au
       },
     });
 
+    await signIn("credentials", {
+      email: email.toLowerCase(),
+      password,
+      redirectTo: "/",
+    });
+
     return { success: "Registration successful" };
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
     console.error(error);
     if (error instanceof z.ZodError) {
       return { error: "Invalid input data" };
@@ -69,8 +78,7 @@ export async function login(data: z.infer<typeof LoginSchema>): Promise<AuthActi
     await signIn("credentials", {
       email: email.toLowerCase(),
       password,
-      // redirect: false,
-      redirectTo: "/chat",
+      redirectTo: "/",
     });
 
     return { success: "Login successful" };

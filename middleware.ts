@@ -4,7 +4,7 @@ import NextAuth from "next-auth";
 
 const { auth } = NextAuth(authConfig);
 
-const privateRoutes = ["/chat"];
+const privateRoutes = ["/"];
 const authRoutes = ["/login", "/register"];
 
 export default auth(async (req) => {
