@@ -4,12 +4,13 @@ import { Server } from "socket.io";
 import { Message } from "./types/chat-types";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
-const port = 3000;
+// const hostname = "localhost";
+const port = parseInt(process.env.PORT || "3000");
 
 // when using middleware `hostname` and `port` must be provided below
 // initialize next js app
-const app = next({ dev, hostname, port });
+// const app = next({ dev, hostname, port });
+const app = next({ dev, port });
 
 // get next js default request handler
 const handler = app.getRequestHandler();
@@ -88,6 +89,6 @@ app.prepare().then(() => {
       process.exit(1);
     })
     .listen(port, () => {
-      console.log(`> Ready on http://${hostname}:${port}`);
+      console.log(`> Ready on port ${port}`);
     });
 });
