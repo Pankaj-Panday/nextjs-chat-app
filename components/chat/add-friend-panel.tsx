@@ -26,14 +26,14 @@ export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelP
 
   const handleClick = (user: AppUser) => {
     // if user clicked on himself do nothing
-    if(user.id === currentUser.id) return;
+    if (user.id === currentUser.id) return;
 
     // find if some chat already exist between selected user
-    const existingChat = chats.find(chat => {
-      return !chat.isGroup && chat.participants?.some(p => p.id === user.id);
-    })
+    const existingChat = chats.find((chat) => {
+      return !chat.isGroup && chat.participants?.some((p) => p.id === user.id);
+    });
 
-    if(existingChat) setActiveChatId(existingChat.id);
+    if (existingChat) setActiveChatId(existingChat.id);
     else setActiveChatId(null);
     setActiveChatUser(user);
     setSearch("");
@@ -42,17 +42,24 @@ export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelP
   };
 
   useEffect(() => {
+    let ignore = false;
     const fetchUsers = async () => {
       if (debouncedSearch.trim() !== "") {
         setIsLoading(true);
         const users = await getUsersBySearchTerm(debouncedSearch);
-        setSearchedUsers(users);
-        setIsLoading(false);
+        if (!ignore) {
+          setSearchedUsers(users);
+          setIsLoading(false);
+        }
       } else {
         setSearchedUsers([]);
       }
     };
     fetchUsers();
+
+    return () => {
+      ignore = true;  // ignore previous response if there is new call
+    };
   }, [debouncedSearch]);
 
   return (

@@ -11,7 +11,7 @@ export const ChatList = ({ search }: { search: string }) => {
   return (
     <ScrollArea className="flex flex-1 gap-4 h-full flex-col">
       <div className="flex flex-col gap-1 pr-3 pb-3">
-        {filteredChats.length > 0 &&
+        {filteredChats.length > 0 ? (
           filteredChats.map((chat) => {
             return (
               <ChatCard
@@ -24,7 +24,10 @@ export const ChatList = ({ search }: { search: string }) => {
                 }}
               />
             );
-          })}
+          })
+        ) : (
+          <div className="text-center text-muted-foreground text-sm py-5">No chats found</div>
+        )}
       </div>
     </ScrollArea>
   );

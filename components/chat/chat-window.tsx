@@ -21,42 +21,50 @@ interface ChatWindowProps {
 export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
   const { activeChatId, setActiveChatId, updateChats, updateCurrentChat, activeChatUser } = useChat();
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const { socket } = useSocket();
 
   if (!activeChatId && !activeChatUser) return <EmptyChatWindow />;
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!activeChatUser) return;
+    if (!activeChatUser || !message.trim()) return;
 
-    const data = await sendMessage(message, {
-      senderId: currentUser.id,
-      chatId: activeChatId ?? undefined,
-      receiverId: activeChatUser?.id,
-    });
-    if (!data) return;
+    setLoading(true);
 
-    // Emit socket event after DB save
-    socket?.emit("new-message", data.message);
-
-    if (data.isNewChat && data.chat) {
-      setActiveChatId(data.chat.id); // can also use setActiveChatId(data.message.chatId);
-      const newChatRecordForReceiver = createNewChatRecord({
-        chat: data.chat,
-        message: data.message,
-        user: currentUser,
+    try {
+      const data = await sendMessage(message, {
+        senderId: currentUser.id,
+        chatId: activeChatId ?? undefined,
+        receiverId: activeChatUser?.id,
       });
-      socket?.emit("new-chat", {
-        roomId: data.chat.id,
-        receiverId: activeChatUser.id,
-        chatData: newChatRecordForReceiver,
-      });
+      if (!data) return;
+
+      // Emit socket event after DB save
+      socket?.emit("new-message", data.message);
+
+      if (data.isNewChat && data.chat) {
+        setActiveChatId(data.chat.id); // can also use setActiveChatId(data.message.chatId);
+        const newChatRecordForReceiver = createNewChatRecord({
+          chat: data.chat,
+          message: data.message,
+          user: currentUser,
+        });
+        socket?.emit("new-chat", {
+          roomId: data.chat.id,
+          receiverId: activeChatUser.id,
+          chatData: newChatRecordForReceiver,
+        });
+      }
+
+      // update UI
+      updateCurrentChat(data.message);
+      updateChats({ ...data, user: activeChatUser });
+      setMessage("");
+    } finally {
+      setLoading(false);
     }
-
-    // update UI
-    updateCurrentChat(data.message);
-    updateChats({ ...data, user: activeChatUser });
-    setMessage("");
   };
 
   return (
@@ -85,8 +93,12 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
             placeholder="Type a message"
             className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
-          <Button type="submit" size="icon" className="rounded-full">
-            <SendHorizonal />
+          <Button type="submit" size="icon" className="rounded-full" disabled={loading}>
+            {loading ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-muted-foreground" />
+            ) : (
+              <SendHorizonal />
+            )}
           </Button>
         </form>
       </div>
