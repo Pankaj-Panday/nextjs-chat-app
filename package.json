@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "next build",
-    "start": "NODE_ENV=production node server.ts",
+    "start": "NODE_ENV=production tsx server.ts",
     "lint": "next lint",
     "prisma:push": "dotenv -e .env.local -- prisma db push",
     "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev --name update",
@@ -30,6 +30,7 @@
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "tsx": "^4.20.3",
     "dotenv-cli": "^8.0.0",
     "lucide-react": "^0.525.0",
     "next": "15.3.4",
@@ -54,7 +55,6 @@
     "eslint-config-next": "15.3.4",
     "prisma": "^6.11.1",
     "tailwindcss": "^4",
-    "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.4",
     "typescript": "^5"
   }
