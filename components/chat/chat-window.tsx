@@ -1,6 +1,5 @@
 "use client";
 
-import { AppUser } from "@/types/user";
 import { useChat } from "@/context/chat-context";
 import { EmptyChatWindow } from "./empty-chat-window";
 import { MessageChatWindow } from "./message-chat-window";
@@ -13,15 +12,13 @@ import { FormEvent } from "react";
 import { sendMessage } from "@/actions/chat-actions";
 import { useSocket } from "@/context/socket-context";
 import { createNewChatRecord } from "@/lib/utils";
+import { useAuth } from "@/context/user-context";
 
-interface ChatWindowProps {
-  currentUser: AppUser;
-}
-
-export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
+export const ChatWindow = () => {
   const { activeChatId, setActiveChatId, updateChats, updateCurrentChat, activeChatUser } = useChat();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const { currentUser } = useAuth();
 
   const { socket } = useSocket();
 
@@ -81,7 +78,7 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
         </div>
       </div>
       <div className="flex-1 flex flex-col px-3 pb-3 overflow-y-hidden">
-        <MessageChatWindow currentUser={currentUser} />
+        <MessageChatWindow />
         <form onSubmit={handleSendMessage} className="flex items-center gap-2 border rounded-full px-3 py-2 mt-2">
           <Input
             autoFocus

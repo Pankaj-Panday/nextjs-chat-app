@@ -23,11 +23,9 @@ type ChatContextType = {
 const ChatContext = createContext<ChatContextType | null>(null);
 
 export const ChatProvider = ({
-  // currentUser,
   children,
   initialChats,
 }: {
-  currentUser: AppUser;
   children: React.ReactNode;
   initialChats: Chat[];
 }) => {

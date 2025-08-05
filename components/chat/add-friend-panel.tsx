@@ -10,19 +10,20 @@ import { getUsersBySearchTerm } from "@/actions/search-actions";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/context/chat-context";
+import { useAuth } from "@/context/user-context";
 
 interface AddFriendPanelProps {
   isOpen: boolean;
-  currentUser: AppUser;
   onClose: () => void;
 }
 
-export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelProps) => {
+export const AddFriendPanel = ({ isOpen, onClose }: AddFriendPanelProps) => {
   const [search, setSearch] = useState<string>("");
   const [searchedUsers, setSearchedUsers] = useState<AppUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const debouncedSearch = useDebounce(search);
   const { setActiveChatUser, setActiveChatId, chats } = useChat();
+  const { currentUser } = useAuth();
 
   const handleClick = (user: AppUser) => {
     // if user clicked on himself do nothing
@@ -58,7 +59,7 @@ export const AddFriendPanel = ({ currentUser, isOpen, onClose }: AddFriendPanelP
     fetchUsers();
 
     return () => {
-      ignore = true;  // ignore previous response if there is new call
+      ignore = true; // ignore previous response if there is new call
     };
   }, [debouncedSearch]);
 
