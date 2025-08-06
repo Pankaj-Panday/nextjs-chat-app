@@ -22,13 +22,7 @@ type ChatContextType = {
 
 const ChatContext = createContext<ChatContextType | null>(null);
 
-export const ChatProvider = ({
-  children,
-  initialChats,
-}: {
-  children: React.ReactNode;
-  initialChats: Chat[];
-}) => {
+export const ChatProvider = ({ children, initialChats }: { children: React.ReactNode; initialChats: Chat[] }) => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeChatUser, setActiveChatUser] = useState<AppUser | null>(null);
 
@@ -38,23 +32,26 @@ export const ChatProvider = ({
   const joinedRoomsRef = useRef<Set<string>>(new Set());
 
   // Updates the chat if its old chat, pushes a new chat record if its new chat
-  const updateChats = useCallback(({ message, isNewChat, chat, user }: ChatMessagePayload & { user: AppUser | null }) => {
-    setChats((prevChats) => {
-      if (!isNewChat) {
-        // update the chat
-        return prevChats.map((pc) => {
-          if (pc.id === message.chatId) {
-            return { ...pc, lastMessage: message.content }; // maybe modify lastRead as well
-          }
-          return pc;
-        });
-      }
-      // push new chat record to the chat list
-      const newChatRecord = createNewChatRecord({ message, chat, user });
-      if(!newChatRecord) return prevChats;
-      return [newChatRecord, ...prevChats];
-    });
-  }, []);
+  const updateChats = useCallback(
+    ({ message, isNewChat, chat, user }: ChatMessagePayload & { user: AppUser | null }) => {
+      setChats((prevChats) => {
+        if (!isNewChat) {
+          // update the chat
+          return prevChats.map((pc) => {
+            if (pc.id === message.chatId) {
+              return { ...pc, lastMessage: { ...message } }; // maybe modify lastRead as well
+            }
+            return pc;
+          });
+        }
+        // push new chat record to the chat list
+        const newChatRecord = createNewChatRecord({ message, chat, user });
+        if (!newChatRecord) return prevChats;
+        return [newChatRecord, ...prevChats];
+      });
+    },
+    []
+  );
 
   const updateCurrentChat = useCallback(
     (message: Message) => {

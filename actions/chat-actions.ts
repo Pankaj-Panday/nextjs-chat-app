@@ -20,10 +20,12 @@ export async function getChatMessagesByChatId(chatId: string): Promise<Message[]
     const messages = chatMessages.map((msg) => {
       return {
         id: msg.id,
+        type: msg.type,
         chatId: msg.chatId,
         sender: msg.senderId,
         content: msg.content,
         sentAt: msg.createdAt,
+        mediaUrl: msg.mediaUrl,
       };
     });
 

@@ -4,15 +4,13 @@ import { useChat } from "@/context/chat-context";
 import { EmptyChatWindow } from "./empty-chat-window";
 import { MessageChatWindow } from "./message-chat-window";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { SendHorizonal } from "lucide-react";
 import { useState } from "react";
 import { FormEvent } from "react";
 import { sendMessage } from "@/actions/chat-actions";
 import { useSocket } from "@/context/socket-context";
 import { createNewChatRecord } from "@/lib/utils";
 import { useAuth } from "@/context/user-context";
+import { ChatInput } from "./chat-input";
 
 export const ChatWindow = () => {
   const { activeChatId, setActiveChatId, updateChats, updateCurrentChat, activeChatUser } = useChat();
@@ -79,25 +77,7 @@ export const ChatWindow = () => {
       </div>
       <div className="flex-1 flex flex-col px-3 pb-3 overflow-y-hidden">
         <MessageChatWindow />
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2 border rounded-full px-3 py-2 mt-2">
-          <Input
-            autoFocus
-            autoComplete="off"
-            name="message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            type="text"
-            placeholder="Type a message"
-            className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
-          <Button type="submit" size="icon" className="rounded-full" disabled={loading}>
-            {loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-muted-foreground" />
-            ) : (
-              <SendHorizonal />
-            )}
-          </Button>
-        </form>
+        <ChatInput message={message} setMessage={setMessage} onSend={handleSendMessage} loading={loading} />
       </div>
     </>
   );

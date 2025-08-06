@@ -86,13 +86,23 @@ model Message {
   sender        User          @relation(fields: [senderId], references: [id])
   chatId        String
   chat          Chat          @relation(name: "belongsTo", fields: [chatId], references: [id], onDelete: Cascade)
-  content       String        @db.VarChar(1000)
+  type          MessageType   @default(TEXT)
+  content       String?       @db.VarChar(1000)
+  mediaUrl      String? // url to image, video, etc
   createdAt     DateTime      @default(now())
   seenBy        MessageSeen[]
   lastMessageOf Chat?
 
   @@index([createdAt])
   @@map("messages")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  AUDIO
 }
 
 model MessageSeen {

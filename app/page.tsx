@@ -31,6 +31,8 @@ export default async function ChatPage() {
       lastMessage: {
         select: {
           content: true,
+          type: true,
+          mediaUrl: true,
         },
       },
       userChats: {
@@ -61,7 +63,11 @@ export default async function ChatPage() {
       id: chat.id,
       name: chat.name,
       isGroup: chat.isGroup,
-      lastMessage: chat.lastMessage?.content,
+      lastMessage: {
+        type: chat.lastMessage?.type,
+        content: chat.lastMessage?.content,
+        mediaUrl: chat.lastMessage?.mediaUrl,
+      },
       lastRead,
       muted: isMuted,
       user: !chat.isGroup ? otherUsers[0] : null,
