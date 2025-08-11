@@ -8,22 +8,18 @@ interface ChatInputProps {
   message: string;
   setMessage: React.Dispatch<React.SetStateAction<string>>;
   onSend: (e: FormEvent<HTMLFormElement>) => Promise<void>;
+  onImageUpload: (file: File) => Promise<void>;
   loading: boolean;
 }
 
-export const ChatInput = ({ message, setMessage, onSend, loading }: ChatInputProps) => {
+export const ChatInput = ({ message, setMessage, onSend, onImageUpload, loading }: ChatInputProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     const file = e.target.files?.[0];
-    if(file) {
-      // Possible TODO:
-      // - Upload to server
-      // - Emit socket event
-      // - Show preview
-      // - Append to chat as a new message with type "image"
-    }
+    if (!file) return;
+    await onImageUpload(file);
   };
 
   return (

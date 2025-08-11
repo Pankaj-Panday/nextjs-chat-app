@@ -14,7 +14,6 @@ interface ChatCardProps {
 export const ChatCard = ({ chat, isActive, onClick }: ChatCardProps) => {
   if (!chat.user) return null;
 
-  console.log(chat);
   return (
     <article
       className={cn("p-2 cursor-pointer hover:bg-muted/50 rounded-md", isActive && "bg-muted hover:bg-muted")}
