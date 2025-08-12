@@ -30,7 +30,7 @@ export const ChatInput = ({ message, setMessage, onSend, onImageUpload, loading 
       {/* Attachment Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="rounded-full" variant="ghost">
+          <Button disabled={loading} className="rounded-full" variant="ghost">
             <Plus className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
@@ -54,6 +54,7 @@ export const ChatInput = ({ message, setMessage, onSend, onImageUpload, loading 
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         type="text"
+        disabled={loading}
         placeholder="Type a message"
         className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />

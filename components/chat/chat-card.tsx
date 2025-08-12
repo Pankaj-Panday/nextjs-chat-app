@@ -3,10 +3,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Label } from "../ui/label";
 import { MessageStatus } from "./message-status";
 import { cn } from "@/lib/utils";
-import { Chat } from "@/types/chat-types";
+import { ChatRecord } from "@/types/chat-types";
 
 interface ChatCardProps {
-  chat: Chat;
+  chat: ChatRecord;
   isActive: boolean;
   onClick: () => void;
 }

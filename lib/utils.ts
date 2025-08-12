@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import bcrypt from "bcryptjs";
 import { AppUser } from "@/types/user";
-import { Chat, ChatMessagePayload } from "@/types/chat-types";
+import { ChatRecord, ChatMessagePayload } from "@/types/chat-types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -36,7 +36,7 @@ export const getChatReceiver = (participants: AppUser[] | undefined, currentUser
 
 export function createNewChatRecord(
   data: Omit<ChatMessagePayload & { user: AppUser | null }, "isNewChat">
-): Chat | undefined {
+): ChatRecord | undefined {
   const { message, chat, user } = data;
   if (!user) return;
 

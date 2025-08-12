@@ -5,37 +5,6 @@ import { createClient } from "@/lib/supabase";
 import { Message, MessageType } from "@/types/chat-types";
 import { cookies } from "next/headers";
 
-export async function getChatMessagesByChatId(chatId: string): Promise<Message[] | undefined> {
-  try {
-    if (!chatId) throw new Error("No chat id given");
-
-    const chatMessages = await prisma.message.findMany({
-      where: {
-        chatId: chatId,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
-
-    const messages = chatMessages.map((msg) => {
-      return {
-        id: msg.id,
-        type: msg.type,
-        chatId: msg.chatId,
-        sender: msg.senderId,
-        content: msg.content,
-        sentAt: msg.createdAt,
-        mediaUrl: msg.mediaUrl,
-      };
-    });
-
-    return messages;
-  } catch (error) {
-    if (error instanceof Error) throw new Error("Error getting chat data: " + error.message);
-  }
-}
-
 type TextMessage = {
   type: "TEXT";
   content: string;
@@ -55,80 +24,6 @@ type SendMessageConfg = {
   chatId?: string;
   receiverId?: string;
 };
-
-// export async function sendMessage(
-//   message: SendMessageType,
-//   config: SendMessageConfg
-// ): Promise<ChatMessagePayload | undefined> {
-//   try {
-//     const { senderId, chatId, receiverId } = config;
-
-//     if (!message.content && !message.mediaUrl) return;
-
-//     // check if we have all required fields
-//     if (!senderId || (!chatId && !receiverId)) {
-//       throw new Error("Invalid sender or chat ID.");
-//     }
-
-//     // let finalChatId = chatId;
-//     // let isNewChat = false;
-
-//     // // if chatId isn't provided find or create the chat based on the senderId and receiverId
-//     // if (!finalChatId && receiverId) {
-//     //   // find if chat already exist between sender and receiver
-//     //   const existingChat = await findChat(senderId, receiverId);
-//     //   if (existingChat) {
-//     //     finalChatId = existingChat.id;
-//     //   } else {
-//     //   }
-//     //   const { chat, isNew } = await findOrCreateChat(senderId, receiverId);
-//     //   finalChatId = chat.id;
-//     //   isNewChat = isNew;
-//     // }
-
-//     // if (!finalChatId) {
-//     //   throw new Error("Couldn't find or create chat");
-//     // }
-
-//     // // create the message record
-
-//     // let chat;
-//     // // if its an old chat simply update last message
-//     // if (!isNewChat) {
-//     //   await prisma.chat.update({
-//     //     where: { id: finalChatId },
-//     //     data: { lastMessageId: newMessage.id },
-//     //   });
-//     // } else {
-//     //   // if its new chat, also return other fields
-//     //   chat = await prisma.chat.update({
-//     //     where: { id: finalChatId },
-//     //     data: { lastMessageId: newMessage.id },
-//     //     select: {
-//     //       id: true,
-//     //       isGroup: true,
-//     //       name: true,
-//     //     },
-//     //   });
-//     // }
-
-//     // return {
-//     //   message: {
-//     //     id: newMessage.id,
-//     //     type: newMessage.type,
-//     //     mediaUrl: newMessage.mediaUrl,
-//     //     chatId: newMessage.chatId,
-//     //     sender: newMessage.senderId,
-//     //     sentAt: newMessage.createdAt,
-//     //     content: newMessage.content,
-//     //   },
-//     //   isNewChat: isNewChat,
-//     //   chat: isNewChat ? chat : undefined,
-//     // };
-//   } catch (error) {
-//     if (error instanceof Error) throw new Error("Error sending message: " + error.message);
-//   }
-// }
 
 async function findChat(senderId: string, receiverId: string) {
   const chat = await prisma.chat.findFirst({
@@ -170,23 +65,25 @@ async function insertNewMessageToChat(
 ) {
   try {
     // Save message to database
-    const savedMessage = await prisma.message.create({
-      data: {
-        senderId,
-        chatId,
-        type: message.type,
-        content: message.content ?? null,
-        mediaUrl: message.mediaUrl ?? null,
-      },
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      const savedMessage = await tx.message.create({
+        data: {
+          senderId,
+          chatId,
+          type: message.type,
+          content: message.content ?? null,
+          mediaUrl: message.mediaUrl ?? null,
+        },
+      });
+      // update the last message id of chat
+      const updatedChat = await tx.chat.update({
+        where: { id: chatId },
+        data: { lastMessageId: savedMessage.id },
+      });
 
-    // update the last message id of chat
-    const updatedChat = await prisma.chat.update({
-      where: { id: chatId },
-      data: { lastMessageId: savedMessage.id },
+      return { message: savedMessage, chat: updatedChat };
     });
-
-    return { message: savedMessage, chat: updatedChat };
+    return result;
   } catch (error) {
     console.error("Error in insertNewMessageToChat:", error);
     throw new Error("Failed to send message");
@@ -245,7 +142,20 @@ export async function sendText(text: string, config: SendMessageConfg) {
     };
 
     // save message to chat
-    return await insertNewMessageToChat(message, { senderId, chatId: finalChatId });
+    const { message: msg, chat } = await insertNewMessageToChat(message, { senderId, chatId: finalChatId });
+
+    return {
+      message: {
+        id: msg.id,
+        type: msg.type,
+        chatId: msg.chatId,
+        sender: msg.senderId,
+        content: msg.content,
+        mediaUrl: msg.mediaUrl,
+        sentAt: msg.createdAt,
+      },
+      chat,
+    };
   } catch (error) {
     throw error;
   }
@@ -253,7 +163,7 @@ export async function sendText(text: string, config: SendMessageConfg) {
 
 export async function sendImage(file: File, config: SendMessageConfg) {
   try {
-    if (!file) return;
+    if (!file) throw new Error("No image provided");
 
     const { senderId, chatId, receiverId } = config;
     let finalChatId = chatId;
@@ -282,9 +192,53 @@ export async function sendImage(file: File, config: SendMessageConfg) {
     };
 
     // save message to chat
-    return await insertNewMessageToChat(message, { senderId, chatId: finalChatId });
+    const { message: msg, chat } = await insertNewMessageToChat(message, { senderId, chatId: finalChatId });
+
+    return {
+      message: {
+        id: msg.id,
+        type: msg.type,
+        chatId: msg.chatId,
+        sender: msg.senderId,
+        content: msg.content,
+        mediaUrl: msg.mediaUrl,
+        sentAt: msg.createdAt,
+      },
+      chat,
+    };
   } catch (error) {
     throw error;
+  }
+}
+
+export async function getChatMessagesByChatId(chatId: string): Promise<Message[] | undefined> {
+  try {
+    if (!chatId) throw new Error("No chat id given");
+
+    const chatMessages = await prisma.message.findMany({
+      where: {
+        chatId: chatId,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    const messages = chatMessages.map((msg) => {
+      return {
+        id: msg.id,
+        type: msg.type,
+        chatId: msg.chatId,
+        sender: msg.senderId,
+        content: msg.content,
+        sentAt: msg.createdAt,
+        mediaUrl: msg.mediaUrl,
+      };
+    });
+
+    return messages;
+  } catch (error) {
+    if (error instanceof Error) throw new Error("Error getting chat data: " + error.message);
   }
 }
 

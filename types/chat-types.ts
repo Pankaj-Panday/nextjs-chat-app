@@ -14,12 +14,21 @@ export type Message = {
 
 export type Chat = {
   id: string;
+  isGroup: boolean;
+  name: string | null;
+  createdAt: Date; 
+  updatedAt: Date;
+  lastMessageId: string | null;
+};
+
+export type ChatRecord = {
+  id: string;
   name?: string | null;
   isGroup: boolean;
   lastRead?: Date | null; // may have to modify this
   muted?: boolean;
   lastMessage?: {
-    type?: MessageType;
+    type: MessageType | undefined;
     content?: string | null;
     mediaUrl?: string | null;
   };
