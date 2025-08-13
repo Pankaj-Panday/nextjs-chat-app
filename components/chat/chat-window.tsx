@@ -1,67 +1,117 @@
 "use client";
 
-import { AppUser } from "@/types/user";
 import { useChat } from "@/context/chat-context";
 import { EmptyChatWindow } from "./empty-chat-window";
 import { MessageChatWindow } from "./message-chat-window";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { SendHorizonal } from "lucide-react";
 import { useState } from "react";
 import { FormEvent } from "react";
-import { sendMessage } from "@/actions/chat-actions";
+import { sendImage, sendText } from "@/actions/chat-actions";
 import { useSocket } from "@/context/socket-context";
-import { createNewChatRecord } from "@/lib/utils";
+import { useAuth } from "@/context/user-context";
+import { ChatInput } from "./chat-input";
+import { ChatRecord, Chat, Message } from "@/types/chat-types";
+import { createChatRecord, createDataForReceiver } from "@/lib/utils";
+import { AppUser } from "@/types/user";
 
-interface ChatWindowProps {
-  currentUser: AppUser;
-}
-
-export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
-  const { activeChatId, setActiveChatId, updateChats, updateCurrentChat, activeChatUser } = useChat();
+export const ChatWindow = () => {
+  const { activeChatId, setActiveChatId, chats, joinRoom, updateChatList, updateCurrentChatMessages, activeChatUser } =
+    useChat();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const { currentUser } = useAuth();
 
   const { socket } = useSocket();
 
   if (!activeChatId && !activeChatUser) return <EmptyChatWindow />;
 
+  const updateUI = (data: { message: Message; chat: Chat }) => {
+    if (!activeChatUser) return;
+    const { chat, message } = data;
+
+    // find existing chat (to get value of muted)
+    const existingChat = activeChatId ? chats.find((chat) => chat.id === activeChatId) : null;
+
+    // create the chat record
+    const chatRecord: ChatRecord = createChatRecord({
+      chat,
+      message,
+      user: activeChatUser,
+      muted: existingChat ? existingChat.muted : false,
+    });
+
+    updateChatList(chatRecord);
+    setMessage("");
+    setActiveChatId(data.chat.id);
+    updateCurrentChatMessages(data.message);
+  };
+
+  const handleChatJoinAndSocketEmit = ({
+    chat,
+    message,
+    sender,
+    receiver,
+    activeChatId,
+  }: {
+    chat: Chat;
+    message: Message;
+    receiver: AppUser;
+    sender: AppUser;
+    activeChatId?: string | null;
+  }) => {
+    // sender joins the room
+    joinRoom(chat.id);
+
+    // if there is no activeChatId, its a new chat, ask server to ask receiver to join room
+    if (!activeChatId) {
+      const dataForReceiver = createDataForReceiver({ chat, message, sender, receiver });
+      socket?.emit("new-chat", dataForReceiver);
+    }
+
+    // emit new message event
+    socket?.emit("new-message", message);
+  };
+
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!activeChatUser || !message.trim()) return;
-
     setLoading(true);
-
     try {
-      const data = await sendMessage(message, {
+      const data = await sendText(message, {
         senderId: currentUser.id,
-        chatId: activeChatId ?? undefined,
         receiverId: activeChatUser?.id,
+        chatId: activeChatId ?? undefined,
       });
-      if (!data) return;
 
-      // Emit socket event after DB save
-      socket?.emit("new-message", data.message);
+      updateUI(data);
+      handleChatJoinAndSocketEmit({
+        chat: data.chat,
+        message: data.message,
+        sender: currentUser,
+        receiver: activeChatUser,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (data.isNewChat && data.chat) {
-        setActiveChatId(data.chat.id); // can also use setActiveChatId(data.message.chatId);
-        const newChatRecordForReceiver = createNewChatRecord({
-          chat: data.chat,
-          message: data.message,
-          user: currentUser,
-        });
-        socket?.emit("new-chat", {
-          roomId: data.chat.id,
-          receiverId: activeChatUser.id,
-          chatData: newChatRecordForReceiver,
-        });
-      }
+  const handleImageUpload = async (file: File) => {
+    if (!activeChatUser || !file) return;
+    try {
+      setLoading(true);
+      const data = await sendImage(file, {
+        senderId: currentUser.id,
+        receiverId: activeChatUser.id,
+        chatId: activeChatId ?? undefined,
+      });
 
-      // update UI
-      updateCurrentChat(data.message);
-      updateChats({ ...data, user: activeChatUser });
-      setMessage("");
+      updateUI(data);
+      handleChatJoinAndSocketEmit({
+        chat: data.chat,
+        message: data.message,
+        sender: currentUser,
+        receiver: activeChatUser,
+      });
     } finally {
       setLoading(false);
     }
@@ -81,26 +131,14 @@ export const ChatWindow = ({ currentUser }: ChatWindowProps) => {
         </div>
       </div>
       <div className="flex-1 flex flex-col px-3 pb-3 overflow-y-hidden">
-        <MessageChatWindow currentUser={currentUser} />
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2 border rounded-full px-3 py-2 mt-2">
-          <Input
-            autoFocus
-            autoComplete="off"
-            name="message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            type="text"
-            placeholder="Type a message"
-            className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
-          <Button type="submit" size="icon" className="rounded-full" disabled={loading}>
-            {loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-muted-foreground" />
-            ) : (
-              <SendHorizonal />
-            )}
-          </Button>
-        </form>
+        <MessageChatWindow />
+        <ChatInput
+          message={message}
+          setMessage={setMessage}
+          onSend={handleSendMessage}
+          loading={loading}
+          onImageUpload={handleImageUpload}
+        />
       </div>
     </>
   );

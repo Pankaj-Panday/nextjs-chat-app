@@ -2,16 +2,13 @@
 
 import { ScrollArea } from "../ui/scroll-area";
 import { ChatMessage } from "./chat-message";
-import { AppUser } from "@/types/user";
 import { useChat } from "@/context/chat-context";
 import { Message } from "@/types/chat-types";
+import { useAuth } from "@/context/user-context";
 
-interface MessageChatWindowProps {
-  currentUser: AppUser;
-}
-
-export const MessageChatWindow = ({ currentUser }: MessageChatWindowProps) => {
+export const MessageChatWindow = () => {
   const { currentChatMessages } = useChat();
+  const { currentUser } = useAuth();
 
   return (
     <>

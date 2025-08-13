@@ -4,6 +4,7 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { NavBar } from "@/components/chat/navbar";
 import { ChatProvider } from "@/context/chat-context";
 import { SocketProvider } from "@/context/socket-context";
+import { AuthProvider } from "@/context/user-context";
 import { prisma } from "@/lib/prisma";
 
 export default async function ChatPage() {
@@ -30,6 +31,8 @@ export default async function ChatPage() {
       lastMessage: {
         select: {
           content: true,
+          type: true,
+          mediaUrl: true,
         },
       },
       userChats: {
@@ -60,7 +63,11 @@ export default async function ChatPage() {
       id: chat.id,
       name: chat.name,
       isGroup: chat.isGroup,
-      lastMessage: chat.lastMessage?.content,
+      lastMessage: {
+        type: chat.lastMessage?.type,
+        content: chat.lastMessage?.content,
+        mediaUrl: chat.lastMessage?.mediaUrl,
+      },
       lastRead,
       muted: isMuted,
       user: !chat.isGroup ? otherUsers[0] : null,
@@ -69,21 +76,22 @@ export default async function ChatPage() {
   });
 
   return (
-    <SocketProvider userId={user.id}>
-      <div className="h-screen w-full flex flex-col">
-        <div>
-          <NavBar user={user} />
+    <AuthProvider currentUser={user}>
+      <SocketProvider userId={user.id}>
+        <div className="h-screen w-full flex flex-col">
+          <div>
+            <NavBar />
+          </div>
+          <div className="flex-1 flex flex-row items-stretch overflow-hidden">
+            <ChatProvider initialChats={formattedChats}>
+              <ChatListPanel />
+              <section className="flex-1 flex flex-col">
+                <ChatWindow />
+              </section>
+            </ChatProvider>
+          </div>
         </div>
-        <div className="flex-1 flex flex-row items-stretch overflow-hidden">
-          <ChatProvider currentUser={user} initialChats={formattedChats}>
-            <ChatListPanel currentUser={user} />
-            {/* show this window when there is any active chat */}
-            <section className="flex-1 flex flex-col">
-              <ChatWindow currentUser={user} />
-            </section>
-          </ChatProvider>
-        </div>
-      </div>
-    </SocketProvider>
+      </SocketProvider>
+    </AuthProvider>
   );
 }
