@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
-import { Message } from "./types/chat-types";
+import { DataForReceiver, Message } from "./types/chat-types";
 
 const dev = process.env.NODE_ENV !== "production";
 // const hostname = "localhost";
@@ -43,7 +43,10 @@ app.prepare().then(() => {
     userSocketMap.get(userId)!.add(socket.id);
 
     socket.on("join-room", (chatId) => {
-      socket.join(chatId);
+      if (!socket.rooms.has(chatId)) {
+        // socket internally keeps track of rooms that it has joined
+        socket.join(chatId);
+      }
       console.log(`${userId} joined chat room: ${chatId}`);
     });
 
@@ -52,15 +55,12 @@ app.prepare().then(() => {
       console.log(`${userId} left the room: ${chatId}`);
     });
 
-    // notify receiver of the new chat
-    socket.on("new-chat", ({ roomId, receiverId, chatData }) => {
-      if (!receiverId) return;
-      const receiverSockets = userSocketMap.get(receiverId);
-
-      // user is logged into atleast one device
+    socket.on("new-chat", ({ sender, recieverId, data }: DataForReceiver & { recieverId: string }) => {
+      const receiverSockets = userSocketMap.get(recieverId);
       if (receiverSockets && receiverSockets.size > 0) {
+
         receiverSockets.forEach((socketId) => {
-          io.to(socketId).emit("new-chat", { roomId, chatData });
+          io.to(socketId).emit("new-chat", { sender, recieverId, data });
         });
       }
     });
@@ -68,7 +68,6 @@ app.prepare().then(() => {
     // Handle new message
     socket.on("new-message", (message: Message) => {
       console.log("📨 New message from", message.sender, "in chat", message.chatId);
-      // broadcast to the room so that both receiver and sender can have that message
       socket.to(message.chatId).emit("receive-message", message);
     });
 

@@ -16,9 +16,9 @@ export type Chat = {
   id: string;
   isGroup: boolean;
   name: string | null;
-  createdAt: Date; 
+  createdAt: Date;
   updatedAt: Date;
-  lastMessageId: string | null;
+  lastMessageId?: string | null;
 };
 
 export type ChatRecord = {
@@ -43,5 +43,23 @@ export type ChatMessagePayload = {
     id: string;
     isGroup: boolean;
     name: string | null;
+  };
+};
+
+export type DataForReceiver = {
+  sender: AppUser;
+  data: {
+    chat: {
+      id: string;
+      isGroup: boolean;
+      name: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    message: {
+      type: MessageType;
+      content?: string | null;
+      mediaUrl?: string | null;
+    };
   };
 };

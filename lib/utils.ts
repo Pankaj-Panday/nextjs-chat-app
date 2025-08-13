@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import bcrypt from "bcryptjs";
 import { AppUser } from "@/types/user";
-import { ChatRecord, ChatMessagePayload } from "@/types/chat-types";
+import { Chat, ChatRecord, DataForReceiver, Message } from "@/types/chat-types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,44 +19,56 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return isMatch;
 }
 
-export const getChatReceiver = (participants: AppUser[] | undefined, currentUser: AppUser): AppUser => {
-  if (!participants) {
-    throw new Error("Participants are required");
-  }
-
-  if (participants.length !== 2) {
-    throw new Error("Only 1-on-1 chat should use getChatReceiver");
-  }
-  const receiver = participants.find((participant) => participant.id !== currentUser.id);
-  if (!receiver) {
-    throw new Error("Receiver not found");
-  }
-  return receiver;
-};
-
-export function createNewChatRecord(
-  data: Omit<ChatMessagePayload & { user: AppUser | null }, "isNewChat">
-): ChatRecord | undefined {
-  const { message, chat, user } = data;
-  if (!user) return;
-
+export function createDataForReceiver({
+  sender,
+  receiver,
+  chat,
+  message,
+}: {
+  sender: AppUser;
+  receiver: AppUser;
+  chat: Chat;
+  message: Message;
+}): DataForReceiver & { recieverId: string } {
   return {
-    id: message.chatId,
-    name: chat?.name,
-    isGroup: chat?.isGroup ?? false,
-    lastMessage: {
-      content: message.content,
-      mediaUrl: message.mediaUrl,
-      type: message.type,
+    sender,
+    recieverId: receiver.id,
+    data: {
+      chat: {
+        id: chat.id,
+        isGroup: chat.isGroup,
+        name: chat.name,
+        createdAt: chat.createdAt,
+        updatedAt: chat.updatedAt,
+      },
+      message: {
+        type: message.type,
+        content: message.content,
+        mediaUrl: message.mediaUrl,
+      },
     },
-    lastRead: null, // modify it
-    muted: false,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-    }, // if oauth field exist in user, remove it
-    participants: undefined, // maybe modify it for group chat
+  };
+}
+
+export function createChatRecord({
+  chat,
+  message,
+  muted = false,
+  user,
+}: {
+  chat: Chat | ChatRecord;
+  message: Partial<Message>;
+  muted?: boolean;
+  user: AppUser | null;
+}): ChatRecord {
+  return {
+    id: chat.id,
+    name: chat.name,
+    isGroup: chat.isGroup,
+    lastMessage: { type: message.type, content: message.content, mediaUrl: message.mediaUrl },
+    lastRead: null,
+    muted,
+    user,
+    participants: undefined,
   };
 }
