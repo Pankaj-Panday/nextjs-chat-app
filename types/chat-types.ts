@@ -4,7 +4,7 @@ export type Message = {
   id: string;
   chatId: string;
   sender: string;
-  content: string;
+  content?: string | null;
   sentAt: Date;
 };
 
@@ -14,7 +14,7 @@ export type Chat = {
   isGroup: boolean;
   lastRead?: Date | null; // may have to modify this
   muted?: boolean;
-  lastMessage?: string;
+  lastMessage?: string | null;
   user: AppUser | null;
   participants?: AppUser[];
 };
